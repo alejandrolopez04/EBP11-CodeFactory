@@ -1,0 +1,7 @@
+$kind: http-request
+url: http://localhost:8080/api/products
+method: POST
+body:
+  type: json
+  content: '{ "sku": "PROD-017", "name": "Laptop Gamer", "category": "Electrónicos", "basePrice": 100, "maxPrice": 500, "minPrice": 300 }'
+order: 1789343494228

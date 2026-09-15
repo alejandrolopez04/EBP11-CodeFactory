@@ -20,6 +20,8 @@ public class ProductJpaEntity {
     private Long basePrice;
     private Long minPrice;
     private Long maxPrice;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ProductStatus productStatus;
 
     public ProductJpaEntity() {

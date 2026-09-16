@@ -46,7 +46,7 @@ public class ProductService implements CreateProductUseCase {
         }
 
         if (productRepositoryPort.existsBySku(product.getSku())) {
-            throw new IllegalArgumentException("El SKU ya existe.");
+            throw new IllegalArgumentException("El SKU ya se encuentra registrado.");
         }
 
         ProductStatus productStatus = ProductStatus.ACTIVE;

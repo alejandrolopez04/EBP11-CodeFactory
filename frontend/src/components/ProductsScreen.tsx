@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ProductFormModal from "./ProductFormModal";
+import Toast from "./Toast"
 
 const PRODUCTS = [
   { sku: "SUB-PRE-001", name: "Suscripción Premium Mensual", category: "Suscripciones", base: 29900, min: 24900, max: 39900, status: "Activo" },
@@ -21,6 +22,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
   const [category, setCategory] = useState("Todas");
   const [showModal, setShowModal] = useState(false);
   const [showEmpty, setShowEmpty] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const categories = ["Todas", ...Array.from(new Set(PRODUCTS.map((p) => p.category)))];
   const filtered = PRODUCTS.filter(
@@ -142,8 +144,13 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
           </div>
         </>
       )}
-
-      {showModal && <ProductFormModal onClose={() => setShowModal(false)} />}
+        {showModal && (
+            <ProductFormModal
+                onClose={() => setShowModal(false)}
+                onProductCreated={() => setToast("Producto registrado exitosamente")}
+            />
+        )}
+        {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import RuleFormModal from "./RuleFormModal";
+import ProductFormModal from "@/components/ProductFormModal.tsx";
+import Toast from "@/components/Toast.tsx";
 
 const RULES = [
   { id: "RGL-001", name: "Recargo hora pico", condition: "Horario = Hora pico", effect: "+18%", products: ["Envío Express 24h", "Suscripción Premium"], more: 2, status: true },
@@ -15,6 +17,7 @@ export default function PricingRulesScreen() {
   const [showModal, setShowModal] = useState(false);
   const [confirmRule, setConfirmRule] = useState<string | null>(null);
   const [rules, setRules] = useState(RULES);
+  const [toast, setToast] = useState<string | null>(null);
 
   const toggleStatus = (id: string) => {
     setRules((r) => r.map((rule) => rule.id === id ? { ...rule, status: !rule.status } : rule));
@@ -106,9 +109,6 @@ export default function PricingRulesScreen() {
           </tbody>
         </table>
       </div>
-
-      {showModal && <RuleFormModal onClose={() => setShowModal(false)} />}
-
       {/* Confirm modal */}
       {confirmRule && ruleToConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -143,6 +143,14 @@ export default function PricingRulesScreen() {
           </div>
         </div>
       )}
+
+      {showModal && (
+          <RuleFormModal
+              onClose={() => setShowModal(false)}
+              onRuleCreated={() => setToast("Regla registrada exitosamente.")}
+          />
+      )}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
   );
 }

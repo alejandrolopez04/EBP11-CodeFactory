@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 @Component
 public class ProductRepositoryAdapter implements ProductRepositoryPort {
@@ -22,10 +21,10 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
         ProductJpaEntity entity = toEntity(product);
         ProductJpaEntity saved = productJpaRepository.save(entity);
         return toDomain(saved);
-    };
+    }
 
     @Override
-    public List<Product> getProducts(){
+    public List<Product> getAllProducts(){
         return productJpaRepository.findAll().stream().map(this::toDomain).toList();
     }
 
@@ -44,25 +43,25 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
         Product productToDeactivate = productJpaRepository.findById(id).map(this::toDomain).get();
         ProductStatus productStatus = ProductStatus.INACTIVE;
         productToDeactivate.setProductStatus(productStatus);
-    };
+    }
 
     @Override
     public void activateProduct(Long id){
         Product productToDeactivate = productJpaRepository.findById(id).map(this::toDomain).get();
         ProductStatus productStatus = ProductStatus.ACTIVE;
         productToDeactivate.setProductStatus(productStatus);
-    };
+    }
 
     private ProductJpaEntity toEntity(Product product){
         return new ProductJpaEntity(product.getId(),
-                product.getSku(), product.getName(), product.getProductStatus(), product.getBasePrice(), product.getMinPrice(), product.getMaxPrice(), product.getCategory()
+                product.getSku(), product.getName(), product.getProductStatus(), product.getBasePrice(), product.getMaxPrice(), product.getMinPrice(), product.getCategory()
         );
     };
 
     private Product toDomain(ProductJpaEntity entity){
         return new Product(entity.getId(),
-                        entity.getSku(), entity.getName(), entity.getProductStatus(), entity.getBasePrice(), entity.getMinPrice(),
-                        entity.getMaxPrice(), entity.getCategory()
+                        entity.getSku(), entity.getName(), entity.getProductStatus(), entity.getBasePrice(), entity.getMaxPrice(),
+                        entity.getMinPrice(), entity.getCategory()
                 );
     }
 

@@ -1,14 +1,17 @@
 package com.codefactory.pricing_dinamico.application.service;
 
 import com.codefactory.pricing_dinamico.application.port.in.CreateProductUseCase;
+import com.codefactory.pricing_dinamico.application.port.in.GetAllProductsUseCase;
 import com.codefactory.pricing_dinamico.application.port.out.ProductRepositoryPort;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 
 @Service
-public class ProductService implements CreateProductUseCase {
+public class ProductService implements CreateProductUseCase, GetAllProductsUseCase {
     private final ProductRepositoryPort productRepositoryPort;
 
     public ProductService(ProductRepositoryPort productRepositoryPort) {
@@ -29,19 +32,19 @@ public class ProductService implements CreateProductUseCase {
             throw new IllegalArgumentException("La categoría es obligatoria.");
         }
 
-        if(product.getBasePrice() == null || product.getBasePrice() <= 0) {
+        if(product.getBasePrice() == null || product.getBasePrice().intValue() <= 0) {
             throw new IllegalArgumentException("El precio base es obligatorio.");
         }
 
-        if(product.getMaxPrice() == null || product.getMaxPrice() <= 0) {
+        if(product.getMaxPrice() == null || product.getMaxPrice().intValue() <= 0) {
             throw new IllegalArgumentException("El precio máximo es obligatorio.");
         }
 
-        if(product.getMinPrice() == null || product.getMinPrice() <= 0) {
+        if(product.getMinPrice() == null || product.getMinPrice().intValue() <= 0) {
             throw new IllegalArgumentException("El precio mínimo es obligatorio.");
         }
 
-        if (product.getMaxPrice() <= product.getMinPrice()) {
+        if (product.getMaxPrice().intValue() <= product.getMinPrice().intValue()) {
             throw new IllegalArgumentException("El precio mínimo deber ser menor al precio máximo.");
         }
 
@@ -53,5 +56,10 @@ public class ProductService implements CreateProductUseCase {
         product.setProductStatus(productStatus);
 
         return productRepositoryPort.save(product);
-    };
+    }
+
+    @Override
+    public List<Product> getAllProducts() {
+        return productRepositoryPort.getAllProducts();
+    }
 }

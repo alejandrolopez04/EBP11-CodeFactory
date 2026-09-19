@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 @Component
 public class ProductRepositoryAdapter implements ProductRepositoryPort {
@@ -25,7 +24,7 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
     };
 
     @Override
-    public List<Product> getProducts(){
+    public List<Product> getAllProducts(){
         return productJpaRepository.findAll().stream().map(this::toDomain).toList();
     }
 
@@ -55,14 +54,14 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
 
     private ProductJpaEntity toEntity(Product product){
         return new ProductJpaEntity(product.getId(),
-                product.getSku(), product.getName(), product.getProductStatus(), product.getBasePrice(), product.getMinPrice(), product.getMaxPrice(), product.getCategory()
+                product.getSku(), product.getName(), product.getProductStatus(), product.getBasePrice(), product.getMaxPrice(), product.getMinPrice(), product.getCategory()
         );
     };
 
     private Product toDomain(ProductJpaEntity entity){
         return new Product(entity.getId(),
-                        entity.getSku(), entity.getName(), entity.getProductStatus(), entity.getBasePrice(), entity.getMinPrice(),
-                        entity.getMaxPrice(), entity.getCategory()
+                        entity.getSku(), entity.getName(), entity.getProductStatus(), entity.getBasePrice(), entity.getMaxPrice(),
+                        entity.getMinPrice(), entity.getCategory()
                 );
     }
 

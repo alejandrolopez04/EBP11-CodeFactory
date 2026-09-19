@@ -9,7 +9,7 @@ import java.util.Optional;
 public interface ProductRepositoryPort {
     Product save(Product product);
 
-    List<Product> getProducts();
+    List<Product> getAllProducts();
 
     Optional<Product> getProductById(Long id);
 

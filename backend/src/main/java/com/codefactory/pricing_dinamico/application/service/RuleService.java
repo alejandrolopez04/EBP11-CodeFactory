@@ -8,10 +8,8 @@ import com.codefactory.pricing_dinamico.domain.model.entities.PricingRule;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
 import com.codefactory.pricing_dinamico.domain.model.entities.RuleStatus;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.stylesheets.LinkStyle;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Service
 public class RuleService implements CreateRuleUseCase {
@@ -61,6 +59,4 @@ public class RuleService implements CreateRuleUseCase {
         }
         return basePrice.add(effectValue);
     }
-
-    ;
 }

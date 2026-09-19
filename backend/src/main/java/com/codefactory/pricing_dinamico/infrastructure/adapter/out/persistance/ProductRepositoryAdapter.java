@@ -21,7 +21,7 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
         ProductJpaEntity entity = toEntity(product);
         ProductJpaEntity saved = productJpaRepository.save(entity);
         return toDomain(saved);
-    };
+    }
 
     @Override
     public List<Product> getAllProducts(){
@@ -43,14 +43,14 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
         Product productToDeactivate = productJpaRepository.findById(id).map(this::toDomain).get();
         ProductStatus productStatus = ProductStatus.INACTIVE;
         productToDeactivate.setProductStatus(productStatus);
-    };
+    }
 
     @Override
     public void activateProduct(Long id){
         Product productToDeactivate = productJpaRepository.findById(id).map(this::toDomain).get();
         ProductStatus productStatus = ProductStatus.ACTIVE;
         productToDeactivate.setProductStatus(productStatus);
-    };
+    }
 
     private ProductJpaEntity toEntity(Product product){
         return new ProductJpaEntity(product.getId(),

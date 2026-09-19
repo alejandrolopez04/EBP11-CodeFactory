@@ -1,20 +1,15 @@
 package com.codefactory.pricing_dinamico.domain.model.entities;
-
-import javax.swing.*;
 import java.math.BigDecimal;
 
 public class Product {
-    private Long id;
-    private String sku;
-    private String name;
-    private String category;
-    private BigDecimal basePrice;
-    private BigDecimal minPrice;
-    private BigDecimal maxPrice;
+    private final Long id;
+    private final String sku;
+    private final String name;
+    private final String category;
+    private final BigDecimal basePrice;
+    private final BigDecimal minPrice;
+    private final BigDecimal maxPrice;
     private ProductStatus productStatus;
-
-    public Product() {
-    }
 
     public Product(Long id, String sku, String name, ProductStatus productStatus, BigDecimal basePrice, BigDecimal maxPrice, BigDecimal minPrice, String category) {
         this.id = id;
@@ -33,32 +28,16 @@ public class Product {
         return sku;
     }
 
-    public void setSku(String sku) {
-        this.sku = sku;
-    }
-
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
     public BigDecimal getBasePrice() {
         return basePrice;
-    }
-
-    public void setBasePrice(BigDecimal basePrice) {
-        this.basePrice = basePrice;
     }
 
     public ProductStatus getProductStatus() {
@@ -73,15 +52,7 @@ public class Product {
         return minPrice;
     }
 
-    public void setMinPrice(BigDecimal minPrice) {
-        this.minPrice = minPrice;
-    }
-
     public BigDecimal getMaxPrice() {
         return maxPrice;
-    }
-
-    public void setMaxPrice(BigDecimal maxPrice) {
-        this.maxPrice = maxPrice;
     }
 }

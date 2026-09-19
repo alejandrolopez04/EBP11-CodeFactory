@@ -20,7 +20,7 @@ public class RuleJpaEntity {
     private VariableType variableType;
 
     @Enumerated(EnumType.STRING)
-    private VariableLevel level;        // nullable, solo aplica si variableType es DEMAND o AVAILABILITY
+    private VariableLevel level;
 
     @Enumerated(EnumType.STRING)
     private TimeConditionType timeCondition;
@@ -36,9 +36,6 @@ public class RuleJpaEntity {
 
     @Enumerated(EnumType.STRING)
     private RuleStatus ruleStatus;
-
-    //private DateFormat startDate;
-    //private DateFormat endDate;
 
     public RuleJpaEntity(java.lang.Integer id, VariableType variableType, RuleStatus ruleStatus , VariableLevel level, EffectType effectType, BigDecimal effectValue, List<Integer> productIds) {
         this.id = id;
@@ -68,19 +65,7 @@ public class RuleJpaEntity {
         return productIds;
     }
 
-    //public DateFormat getStartDate() {return startDate;}
-
-    //public void setStartDate(DateFormat startDate) {this.startDate = startDate;}
-
-    //public DateFormat getEndDate() {return endDate;}
-
-    //public void setEndDate(DateFormat endDate) {this.endDate = endDate;}
-
     public java.lang.Integer getId() {return this.id;}
-
-    public void setRuleStatus(RuleStatus ruleStatus) {
-        this.ruleStatus = ruleStatus;
-    }
 
     public RuleStatus getRuleStatus() {
         return ruleStatus;
@@ -90,35 +75,15 @@ public class RuleJpaEntity {
         return variableType;
     }
 
-    public void setVariableType(VariableType variableType) {
-        this.variableType = variableType;
-    }
-
     public VariableLevel getLevel() {
         return level;
-    }
-
-    public void setLevel(VariableLevel level) {
-        this.level = level;
     }
 
     public TimeConditionType getTimeCondition() {
         return timeCondition;
     }
 
-    public void setTimeCondition(TimeConditionType timeCondition) {
-        this.timeCondition = timeCondition;
-    }
-
     public BigDecimal getEffectValue() {return effectValue;}
 
     public EffectType getEffectType() {return effectType;}
-
-    public void setEffectType(EffectType effectType) {this.effectType = effectType;}
-
-    public void setEffectValue(BigDecimal effectValue) {this.effectValue = effectValue;}
-
-    public void setProductIds(List<Integer> productList) {this.productIds = productList;}
-
-    public Boolean isListEmpty() {return productIds.isEmpty();}
 }

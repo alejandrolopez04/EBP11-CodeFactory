@@ -56,7 +56,7 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
         product.setProductStatus(productStatus);
 
         return productRepositoryPort.save(product);
-    };
+    }
 
     @Override
     public List<Product> getAllProducts() {

@@ -3,7 +3,6 @@ package com.codefactory.pricing_dinamico.application.port.out;
 import com.codefactory.pricing_dinamico.domain.model.entities.PricingRule;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 

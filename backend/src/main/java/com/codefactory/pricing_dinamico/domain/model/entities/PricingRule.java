@@ -13,6 +13,8 @@ public class PricingRule {
     private List<Integer> productIds;
     private RuleStatus ruleStatus;
 
+    public PricingRule() {}
+
     public PricingRule(Integer id, VariableType variableType, RuleStatus ruleStatus, VariableLevel level, EffectType effectType,
                        BigDecimal effectValue, List<Integer> productIds) {
         this.id = id;

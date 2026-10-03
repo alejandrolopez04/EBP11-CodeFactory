@@ -22,7 +22,7 @@ interface PriceCalculationResult {
   calculatedAt: string;
 }
 
-const API_BASE = "/api";
+const API_BASE = "http://localhost:8080/api";
 
 const VARIABLE_TYPES: VariableType[] = ["DEMANDA", "DISPONIBILIDAD", "TEMPORAL"];
 const LEVELS: VariableLevel[] = ["CRITICO", "BAJO", "NORMAL", "ALTO"];

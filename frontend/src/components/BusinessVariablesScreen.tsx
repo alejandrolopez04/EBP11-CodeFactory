@@ -21,6 +21,8 @@ import {
   validateScheduleValues,
 } from "../business-variables/validators";
 
+const API_URL = "http://localhost:8080/api/variables"
+
 export default function BusinessVariablesScreen() {
   const { variables, save } = useBusinessVariables();
 
@@ -30,13 +32,11 @@ export default function BusinessVariablesScreen() {
 
   const [draftDemandValues, setDraftDemandValues] = useState<DemandDraftValues>({
     lowMax: "",
-    mediumMax: "",
     highFrom: "",
   });
 
   const [draftAvailabilityValues, setDraftAvailabilityValues] = useState<AvailabilityDraftValues>({
     criticalThreshold: "",
-    lowThreshold: "",
     normalFrom: "",
   });
 
@@ -148,8 +148,8 @@ export default function BusinessVariablesScreen() {
               summary={
                 <div className="flex gap-2">
                   <Badge label={`Baja: 0–${variables.demand.lowMax}%`} />
-                  <Badge label={`Media: ${variables.demand.lowMax + 1 || 31}–${variables.demand.mediumMax}%`} />
-                  <Badge label={`Alta: >${variables.demand.mediumMax}%`} />
+                  <Badge label={`Media: ${variables.demand.lowMax}–${variables.demand.highFrom}%`} />
+                  <Badge label={`Alta: >${variables.demand.highFrom}%`} />
                 </div>
               }
               editContent={
@@ -174,8 +174,8 @@ export default function BusinessVariablesScreen() {
               summary={
                 <div className="flex gap-2">
                   <Badge label={`Crítico: <${variables.availability.criticalThreshold}%`}  />
-                  <Badge label={`Bajo: ${variables.availability.criticalThreshold}–${variables.availability.lowThreshold}%`} />
-                  <Badge label={`Normal: >${variables.availability.lowThreshold}%`} />
+                  <Badge label={`Bajo: ${variables.availability.criticalThreshold}–${variables.availability.normalFrom}%`} />
+                  <Badge label={`Normal: >${variables.availability.normalFrom}%`} />
                 </div>
               }
               editContent={

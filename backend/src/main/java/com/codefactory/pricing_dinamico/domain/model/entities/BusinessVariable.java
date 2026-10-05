@@ -1,33 +1,38 @@
 package com.codefactory.pricing_dinamico.domain.model.entities;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.time.LocalDateTime;
 
-public class BusinessVariable {
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "variableType",
+        visible = true
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = DemandVariable.class, name = "DEMANDA"),
+        @JsonSubTypes.Type(value = AvailabilityVariable.class, name = "DISPONIBILIDAD"),
+        @JsonSubTypes.Type(value = TemporalVariable.class, name = "TEMPORAL")
+})
+
+public abstract class BusinessVariable {
     private Long id;
     private VariableType variableType;
-    private VariableLevel level;
-    private TimeConditionType timeCondition;
     private LocalDateTime updatedAt;
 
     public BusinessVariable() {}
 
-    public BusinessVariable(Long id, VariableType variableType, VariableLevel level,
-                             TimeConditionType timeCondition, LocalDateTime updatedAt) {
+    public BusinessVariable(Long id, VariableType variableType, LocalDateTime updatedAt) {
         this.id = id;
         this.variableType = variableType;
-        this.level = level;
-        this.timeCondition = timeCondition;
         this.updatedAt = updatedAt;
     }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public VariableType getVariableType() { return variableType; }
-    public void setVariableType(VariableType variableType) { this.variableType = variableType; }
-    public VariableLevel getLevel() { return level; }
-    public void setLevel(VariableLevel level) { this.level = level; }
-    public TimeConditionType getTimeCondition() { return timeCondition; }
-    public void setTimeCondition(TimeConditionType timeCondition) { this.timeCondition = timeCondition; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

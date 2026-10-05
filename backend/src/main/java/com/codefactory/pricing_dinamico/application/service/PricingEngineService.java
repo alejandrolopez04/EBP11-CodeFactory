@@ -76,9 +76,9 @@ public class PricingEngineService implements CalculateFinalPriceUseCase {
     private boolean matchesCurrentVariable(PricingRule rule, Map<VariableType, BusinessVariable> currentVariables) {
         BusinessVariable variable = currentVariables.get(rule.getVariableType());
         if (variable == null) return false;
-        if (variable.getLevel() != rule.getLevel()) return false;
+        // if (variable.getLevel() != rule.getLevel()) return false;
         if (rule.getVariableType() == VariableType.TEMPORAL) {
-            return rule.getTimeCondition() != null && rule.getTimeCondition() == variable.getTimeCondition();
+            //return rule.getTimeCondition() != null && rule.getTimeCondition() == variable.getTimeCondition();
         }
         return true;
     }

@@ -37,21 +37,21 @@ export default function ScheduleForm({
       <div className="grid grid-cols-2 gap-3">
         <TimeRangeField
           label="Hora pico AM"
-          startValue={values.peakAmStart}
-          endValue={values.peakAmEnd}
+          startValue={values.morningStartTime}
+          endValue={values.morningEndTime}
           errorMessage={errors.peakAm}
           autoFocus={autoFocus}
-          onStartChange={(value) => onScheduleChange({ ...values, peakAmStart: value })}
-          onEndChange={(value) => onScheduleChange({ ...values, peakAmEnd: value })}
+          onStartChange={(value) => onScheduleChange({ ...values, morningStartTime: value })}
+          onEndChange={(value) => onScheduleChange({ ...values, morningEndTime: value })}
         />
 
         <TimeRangeField
           label="Hora pico PM"
-          startValue={values.peakPmStart}
-          endValue={values.peakPmEnd}
+          startValue={values.afternoonStartTime}
+          endValue={values.afternoonEndTime}
           errorMessage={errors.peakPm}
-          onStartChange={(value) => onScheduleChange({ ...values, peakPmStart: value })}
-          onEndChange={(value) => onScheduleChange({ ...values, peakPmEnd: value })}
+          onStartChange={(value) => onScheduleChange({ ...values, afternoonStartTime: value })}
+          onEndChange={(value) => onScheduleChange({ ...values, afternoonEndTime: value })}
         />
       </div>
 

@@ -18,6 +18,8 @@ import {
   validateScheduleValues,
 } from "./validators";
 
+const API_URL = "http://localhost:8080/api/variables"
+
 export default function SetupWizardModal() {
   const { variables, save } = useBusinessVariables();
   const [step, setStep] = useState(1);
@@ -38,6 +40,9 @@ export default function SetupWizardModal() {
     if (step === 2) return Object.keys(availabilityErrors).length > 0;
     return Object.keys(scheduleErrors).length > 0;
   }, [availabilityErrors, demandErrors, scheduleErrors, step]);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
@@ -94,15 +99,52 @@ export default function SetupWizardModal() {
     setStep((current) => Math.max(current - 1, 1));
   };
 
-  const handleFinish = () => {
-    if (currentStepHasErrors) return;
+  const handleFinish = async () => {
+    if (currentStepHasErrors || isSaving) return;
 
-    save({
+    const businessVariables = {
       demand: demandDraftToValues(demandValues),
       availability: availabilityDraftToValues(availabilityValues),
       schedule: scheduleDraftToValues(scheduleValues),
       highSeasonMonths,
-    });
+    };
+
+    // Una variable por tipo, como las guarda el backend (una fila por variableType)
+    const payload = [
+      { variableType: "DEMANDA", ...businessVariables.demand },
+      { variableType: "DISPONIBILIDAD", ...businessVariables.availability },
+      {
+        variableType: "TEMPORAL",
+        ...businessVariables.schedule,
+        highSeasonMonths: businessVariables.highSeasonMonths,
+      },
+    ];
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`El servidor respondió con el código ${response.status}`);
+      }
+
+      // Solo si el backend guardó bien, actualizamos el contexto (esto cierra el modal)
+      save(businessVariables);
+    } catch (error) {
+      setSaveError(
+          error instanceof Error
+              ? error.message
+              : "No se pudo guardar la configuración. Intenta de nuevo.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -113,7 +155,7 @@ export default function SetupWizardModal() {
         aria-modal="true"
         aria-labelledby="setup-wizard-title"
         onKeyDown={handleKeyDown}
-        className="bg-white border border-[#e2e6ed] rounded-[8px] w-full max-w-3xl shadow-xl p-5"
+        className="bg-white border border-[#e2e6ed] rounded-[8px] w-full max-w-xl shadow-xl p-5"
       >
         <div className="flex items-start justify-between mb-5">
           <div>
@@ -128,7 +170,6 @@ export default function SetupWizardModal() {
             Paso {step} de 3
           </span>
         </div>
-
         <div className="pt-3 border-t border-[#f1f3f7]">
           {step === 1 && (
             <div>
@@ -183,6 +224,7 @@ export default function SetupWizardModal() {
             <button
               type="button"
               onClick={handleBack}
+              disabled={isSaving}
               className="px-3 py-1.5 text-[12px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px] hover:bg-[#f1f3f7] transition-colors"
             >
               Atrás
@@ -205,18 +247,18 @@ export default function SetupWizardModal() {
           )}
 
           {step === 3 && (
-            <button
-              type="button"
-              onClick={handleFinish}
-              disabled={currentStepHasErrors}
-              className={`px-3 py-1.5 text-[12px] font-semibold rounded-[6px] transition-colors ${
-                currentStepHasErrors
-                  ? "bg-[#9ca3af] text-white cursor-not-allowed"
-                  : "bg-[#1a56db] text-white hover:bg-[#1648c0]"
-              }`}
-            >
-              Finalizar
-            </button>
+              <button
+                  type="button"
+                  onClick={handleFinish}
+                  disabled={currentStepHasErrors || isSaving}
+                  className={`px-3 py-1.5 text-[12px] font-semibold rounded-[6px] transition-colors ${
+                      currentStepHasErrors || isSaving
+                          ? "bg-[#9ca3af] text-white cursor-not-allowed"
+                          : "bg-[#1a56db] text-white hover:bg-[#1648c0]"
+                  }`}
+              >
+                {isSaving ? "Guardando..." : "Finalizar"}
+              </button>
           )}
         </div>
       </div>

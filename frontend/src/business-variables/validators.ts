@@ -29,17 +29,15 @@ export const validateDemandValues = (values: DemandDraftValues) => {
     }
   });
 
-  const lowMax = Number(values.lowMax);
-  const mediumMax = Number(values.mediumMax);
-  const highFrom = Number(values.highFrom);
+  const demandLow = Number(values.demandLow);
+  const demandHigh = Number(values.demandHigh);
 
   if (
     Object.keys(errors).length === 0 &&
-    !(lowMax < mediumMax && mediumMax < highFrom)
+    !(demandLow < demandHigh)
   ) {
-    errors.lowMax = "Los rangos deben ser ascendentes.";
-    errors.mediumMax = "Los rangos deben ser ascendentes.";
-    errors.highFrom = "Los rangos deben ser ascendentes.";
+    errors.demandLow = "Los rangos deben ser ascendentes.";
+    errors.demandHigh = "Los rangos deben ser ascendentes.";
   }
 
   return errors;
@@ -54,17 +52,15 @@ export const validateAvailabilityValues = (values: AvailabilityDraftValues) => {
     }
   });
 
-  const criticalThreshold = Number(values.criticalThreshold);
-  const lowThreshold = Number(values.lowThreshold);
-  const normalFrom = Number(values.normalFrom);
+  const availabilityLow = Number(values.availabilityLow);
+  const availabilityHigh = Number(values.availabilityHigh);
 
   if (
     Object.keys(errors).length === 0 &&
-    !(criticalThreshold < lowThreshold && lowThreshold < normalFrom)
+    !(availabilityLow < availabilityHigh)
   ) {
-    errors.criticalThreshold = "Los umbrales deben ser ascendentes.";
-    errors.lowThreshold = "Los umbrales deben ser ascendentes.";
-    errors.normalFrom = "Los umbrales deben ser ascendentes.";
+    errors.availabilityLow = "Los umbrales deben ser ascendentes.";
+    errors.availabilityHigh = "Los umbrales deben ser ascendentes.";
   }
 
   return errors;
@@ -76,11 +72,11 @@ export const validateScheduleValues = (
 ) => {
   const errors: ScheduleFieldErrors = {};
 
-  if (!isTimeRangeValid(scheduleValues.peakAmStart, scheduleValues.peakAmEnd)) {
+  if (!isTimeRangeValid(scheduleValues.morningStartTime, scheduleValues.morningEndTime)) {
     errors.peakAm = "La hora de término AM debe ser mayor que la hora de inicio.";
   }
 
-  if (!isTimeRangeValid(scheduleValues.peakPmStart, scheduleValues.peakPmEnd)) {
+  if (!isTimeRangeValid(scheduleValues.afternoonStartTime, scheduleValues.afternoonEndTime)) {
     errors.peakPm = "La hora de término PM debe ser mayor que la hora de inicio.";
   }
 
@@ -116,48 +112,48 @@ export const isValidBusinessVariables = (value: unknown): value is BusinessVaria
   const highSeasonMonths = value.highSeasonMonths;
 
   if (
-    !isValidNumber(demand.lowMax) ||
+    !isValidNumber(demand.demandLow) ||
     !isValidNumber(demand.mediumMax) ||
-    !isValidNumber(demand.highFrom)
+    !isValidNumber(demand.demandHigh)
   ) {
     return false;
   }
 
-  if (!(demand.lowMax < demand.mediumMax && demand.mediumMax < demand.highFrom)) {
+  if (!(demand.demandLow < demand.mediumMax && demand.mediumMax < demand.demandHigh)) {
     return false;
   }
 
   if (
-    !isValidNumber(availability.criticalThreshold) ||
+    !isValidNumber(availability.availabilityLow) ||
     !isValidNumber(availability.lowThreshold) ||
-    !isValidNumber(availability.normalFrom)
+    !isValidNumber(availability.availabilityHigh)
   ) {
     return false;
   }
 
   if (
     !(
-      availability.criticalThreshold < availability.lowThreshold &&
-      availability.lowThreshold < availability.normalFrom
+      availability.availabilityLow < availability.lowThreshold &&
+      availability.lowThreshold < availability.availabilityHigh
     )
   ) {
     return false;
   }
 
   if (
-    !isValidTime(schedule.peakAmStart) ||
-    !isValidTime(schedule.peakAmEnd) ||
-    !isValidTime(schedule.peakPmStart) ||
-    !isValidTime(schedule.peakPmEnd)
+    !isValidTime(schedule.morningStartTime) ||
+    !isValidTime(schedule.morningEndTime) ||
+    !isValidTime(schedule.afternoonStartTime) ||
+    !isValidTime(schedule.afternoonEndTime)
   ) {
     return false;
   }
 
-  if (!isTimeRangeValid(schedule.peakAmStart, schedule.peakAmEnd)) {
+  if (!isTimeRangeValid(schedule.morningStartTime, schedule.morningEndTime)) {
     return false;
   }
 
-  if (!isTimeRangeValid(schedule.peakPmStart, schedule.peakPmEnd)) {
+  if (!isTimeRangeValid(schedule.afternoonStartTime, schedule.afternoonEndTime)) {
     return false;
   }
 

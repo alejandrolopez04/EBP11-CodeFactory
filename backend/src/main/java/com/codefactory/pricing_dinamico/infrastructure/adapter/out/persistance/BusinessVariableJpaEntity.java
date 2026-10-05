@@ -1,7 +1,5 @@
 package com.codefactory.pricing_dinamico.infrastructure.adapter.out.persistance;
 
-import com.codefactory.pricing_dinamico.domain.model.entities.TimeConditionType;
-import com.codefactory.pricing_dinamico.domain.model.entities.VariableLevel;
 import com.codefactory.pricing_dinamico.domain.model.entities.VariableType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +9,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,34 +26,26 @@ public class BusinessVariableJpaEntity {
     @Column(nullable = false, unique = true)
     private VariableType variableType;
 
-    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(nullable = false)
-    private VariableLevel level;
-
-    @Enumerated(EnumType.STRING)
-    private TimeConditionType timeCondition;
+    private String payload;
 
     private LocalDateTime updatedAt;
 
     public BusinessVariableJpaEntity() {}
 
-    public BusinessVariableJpaEntity(Long id, VariableType variableType, VariableLevel level,
-                                      TimeConditionType timeCondition, LocalDateTime updatedAt) {
+    public BusinessVariableJpaEntity(Long id, VariableType variableType, String payload, LocalDateTime updatedAt) {
         this.id = id;
+        this.payload = payload;
         this.variableType = variableType;
-        this.level = level;
-        this.timeCondition = timeCondition;
         this.updatedAt = updatedAt;
     }
 
+    public String getPayload() {
+        return payload;
+    }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public VariableType getVariableType() { return variableType; }
-    public void setVariableType(VariableType variableType) { this.variableType = variableType; }
-    public VariableLevel getLevel() { return level; }
-    public void setLevel(VariableLevel level) { this.level = level; }
-    public TimeConditionType getTimeCondition() { return timeCondition; }
-    public void setTimeCondition(TimeConditionType timeCondition) { this.timeCondition = timeCondition; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

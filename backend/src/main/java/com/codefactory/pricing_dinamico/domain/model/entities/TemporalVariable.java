@@ -12,13 +12,13 @@ public class TemporalVariable extends BusinessVariable {
     private List<String> highSeasonMonths;
 
     public TemporalVariable(Long id, VariableType variableType, LocalDateTime updatedAt, LocalTime morningStartTime,
-                            LocalTime morningEndTime, LocalTime afternoonStartTime, LocalTime afternoonEndTime, List<String> months) {
+                            LocalTime morningEndTime, LocalTime afternoonStartTime, LocalTime afternoonEndTime, List<String> highSeasonMonths) {
         super(id, variableType, updatedAt);
         this.morningStartTime = morningStartTime;
         this.morningEndTime = morningEndTime;
         this.afternoonStartTime = afternoonStartTime;
         this.afternoonEndTime = afternoonEndTime;
-        this.highSeasonMonths = months;
+        this.highSeasonMonths = highSeasonMonths;
     }
 
     public LocalTime getMorningStartTime() {

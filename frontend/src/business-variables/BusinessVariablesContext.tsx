@@ -1,62 +1,85 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { BusinessVariables } from "./types";
-import { isValidBusinessVariables } from "./validators";
+import {
+  ALL_SECTIONS,
+  fetchRaw,
+  postRaw,
+  toBackendItem,
+  toBusinessVariables,
+  type BackendVariable,
+  type Section,
+} from "./api";
 
-const STORAGE_KEY = "business-variables:v1";
+type Status = "loading" | "ready" | "error";
 
 type BusinessVariablesContextValue = {
   variables: BusinessVariables | null;
-  isLoaded: boolean;
-  save: (values: BusinessVariables) => void;
+  status: Status;
+  isLoaded: boolean; // compatibilidad con el código que ya usa isLoaded
+  /**
+   * Guarda en el backend. Con `section` guarda solo esa sección (pantalla de edición);
+   * sin `section` guarda las tres (wizard inicial). Lanza error si falla.
+   */
+  save: (values: BusinessVariables, section?: Section) => Promise<void>;
 };
 
 const BusinessVariablesContext = createContext<BusinessVariablesContextValue | null>(null);
 
 export function BusinessVariablesProvider({ children }: { children: ReactNode }) {
-  const [variables, setVariables] = useState<BusinessVariables | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Lista tal cual la entrega el backend: de ahí salen los `id` para hacer update.
+  const [raw, setRaw] = useState<BackendVariable[]>([]);
+  const [status, setStatus] = useState<Status>("loading");
 
   useEffect(() => {
-    try {
-      const rawValue = window.localStorage.getItem(STORAGE_KEY);
+    const controller = new AbortController();
 
-      if (!rawValue) {
-        setVariables(null);
-        return;
-      }
+    fetchRaw(controller.signal)
+        .then((list) => {
+          setRaw(list);
+          setStatus("ready");
+        })
+        .catch((error) => {
+          if (error?.name !== "AbortError") setStatus("error");
+        });
 
-      const parsedValue: unknown = JSON.parse(rawValue);
-      setVariables(isValidBusinessVariables(parsedValue) ? parsedValue : null);
-    } catch {
-      setVariables(null);
-    } finally {
-      setIsLoaded(true);
-    }
+    return () => controller.abort();
   }, []);
 
-  const save = (values: BusinessVariables) => {
-    setVariables(values);
+  const variables = useMemo(() => toBusinessVariables(raw), [raw]);
 
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
-    } catch {
-      // Si localStorage falla, al menos mantenemos el estado en memoria.
-    }
-  };
+  const save = useCallback(
+      async (values: BusinessVariables, section?: Section) => {
+        const sections = section ? [section] : ALL_SECTIONS;
+        const items = sections.map((s) => toBackendItem(s, values, raw));
+
+        const saved = await postRaw(items); // si falla, lanza y el estado no cambia
+
+        // El estado refleja lo que respondió el servidor, no lo que escribió el usuario.
+        setRaw((prev) => [
+          ...prev.filter((v) => !saved.some((s) => s.variableType === v.variableType)),
+          ...saved,
+        ]);
+      },
+      [raw],
+  );
 
   const contextValue = useMemo(
-    () => ({
-      variables,
-      isLoaded,
-      save,
-    }),
-    [variables, isLoaded],
+      () => ({ variables, status, isLoaded: status !== "loading", save }),
+      [variables, status, save],
   );
 
   return (
-    <BusinessVariablesContext.Provider value={contextValue}>
-      {children}
-    </BusinessVariablesContext.Provider>
+      <BusinessVariablesContext.Provider value={contextValue}>
+        {children}
+      </BusinessVariablesContext.Provider>
   );
 }
 

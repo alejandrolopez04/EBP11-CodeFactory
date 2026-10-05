@@ -4,6 +4,7 @@ import com.codefactory.pricing_dinamico.application.port.out.BusinessVariableRep
 import com.codefactory.pricing_dinamico.domain.model.entities.*;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,12 +39,15 @@ public class BusinessVariableRepositoryAdapter implements BusinessVariableReposi
     }
 
     public BusinessVariableJpaEntity toEntity(BusinessVariable domain) {
+        ObjectNode payload = objectMapper.valueToTree(domain);
+        payload.remove("id");
+        payload.remove("updatedAt");
+        payload.remove("variableType");
         return new BusinessVariableJpaEntity(
                 domain.getId(),
                 domain.getVariableType(),
-                objectMapper.writeValueAsString(domain),
-                domain.getUpdatedAt()
-        );
+                objectMapper.writeValueAsString(payload),
+                domain.getUpdatedAt());
     }
 
     public BusinessVariable toDomain(BusinessVariableJpaEntity entity) {
@@ -52,7 +56,9 @@ public class BusinessVariableRepositoryAdapter implements BusinessVariableReposi
             case DISPONIBILIDAD -> AvailabilityVariable.class;
             case TEMPORAL -> TemporalVariable.class;
         };
-        BusinessVariable variable = objectMapper.readValue(entity.getPayload(), clazz);
+        ObjectNode payload = (ObjectNode) objectMapper.readTree(entity.getPayload());
+        payload.put("variableType", entity.getVariableType().name());
+        BusinessVariable variable = objectMapper.treeToValue(payload, clazz);
         variable.setId(entity.getId());
         variable.setUpdatedAt(entity.getUpdatedAt());
         return variable;

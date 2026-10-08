@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface RuleRepositoryPort {
     PricingRule save(PricingRule pricingRule);
 
+    List<PricingRule> saveAll(List<PricingRule> rules);
+
     List<PricingRule> getRules();
 
     Optional<PricingRule> getRuleById(Long id);

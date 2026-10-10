@@ -17,8 +17,4 @@ public interface ProductRepositoryPort {
     Optional<Product> getProductById(Long id);
 
     boolean existsBySku(String sku);
-
-    void activateProduct(Long id);
-
-    void deactivateProduct(Long id);
 }

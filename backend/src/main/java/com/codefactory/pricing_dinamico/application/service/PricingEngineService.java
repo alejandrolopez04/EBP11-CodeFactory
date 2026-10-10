@@ -9,6 +9,7 @@ import com.codefactory.pricing_dinamico.domain.model.entities.EffectType;
 import com.codefactory.pricing_dinamico.domain.model.entities.PriceCalculationResult;
 import com.codefactory.pricing_dinamico.domain.model.entities.PricingRule;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
+import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
 import com.codefactory.pricing_dinamico.domain.model.entities.RuleStatus;
 import com.codefactory.pricing_dinamico.domain.model.entities.VariableType;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,12 @@ public class PricingEngineService implements CalculateFinalPriceUseCase {
     public PriceCalculationResult calculateFinalPrice(Long productId) {
         Product product = productRepositoryPort.getProductById(productId)
             .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado con id: " + productId));
+
+         // HU03: un producto inactivo no recibe ajustes automáticos, se mantiene el precio base
+        if (product.getProductStatus() == ProductStatus.INACTIVE) {
+            return new PriceCalculationResult(product.getId(), product.getBasePrice(), product.getBasePrice(),
+                false, false, new ArrayList<>(), LocalDateTime.now());
+        }
 
         Map<VariableType, BusinessVariable> currentVariables = businessVariableRepositoryPort.getAllVariables()
             .stream()

@@ -62,4 +62,10 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
     public List<Product> getAllProducts() {
         return productRepositoryPort.getAllProducts();
     }
+
+    @Override
+    public List<Product> getProducts(ProductStatus status, String category) {
+        String normalizedCategory = (category == null || category.isBlank()) ? null : category.trim();
+        return productRepositoryPort.findByFilters(status, normalizedCategory);
+    }
 }

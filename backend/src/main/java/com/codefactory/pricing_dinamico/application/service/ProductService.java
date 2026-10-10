@@ -1,9 +1,11 @@
 package com.codefactory.pricing_dinamico.application.service;
 
+import com.codefactory.pricing_dinamico.application.port.in.ChangeProductStatusUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.CreateProductUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.GetAllProductsUseCase;
 import com.codefactory.pricing_dinamico.application.port.out.ProductRepositoryPort;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
+import com.codefactory.pricing_dinamico.domain.model.entities.ProductNotFoundException;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +13,7 @@ import java.util.List;
 
 
 @Service
-public class ProductService implements CreateProductUseCase, GetAllProductsUseCase {
+public class ProductService implements CreateProductUseCase, GetAllProductsUseCase, ChangeProductStatusUseCase {
     private final ProductRepositoryPort productRepositoryPort;
 
     public ProductService(ProductRepositoryPort productRepositoryPort) {
@@ -61,5 +63,30 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
     @Override
     public List<Product> getAllProducts() {
         return productRepositoryPort.getAllProducts();
+    }
+
+    
+    @Override
+    public List<Product> getProducts(ProductStatus status, String category) {
+        String normalizedCategory = (category == null || category.isBlank()) ? null : category.trim();
+        return productRepositoryPort.findByFilters(status, normalizedCategory);
+    }
+
+    // HU03: solo cambia el estado.
+    @Override
+    public Product deactivateProduct(Long id) {
+        return changeStatus(id, ProductStatus.INACTIVE);
+    }
+
+    @Override
+    public Product activateProduct(Long id) {
+        return changeStatus(id, ProductStatus.ACTIVE);
+    }
+
+    private Product changeStatus(Long id, ProductStatus newStatus) {
+        Product product = productRepositoryPort.getProductById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+        product.setProductStatus(newStatus);
+        return productRepositoryPort.save(product);
     }
 }

@@ -29,6 +29,21 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
     }
 
     @Override
+    public List<Product> findByFilters(ProductStatus status, String category){
+        List<ProductJpaEntity> result;
+        if (status != null && category != null) {
+            result = productJpaRepository.findByProductStatusAndCategory(status, category);
+        } else if (status != null) {
+            result = productJpaRepository.findByProductStatus(status);
+        } else if (category != null) {
+            result = productJpaRepository.findByCategory(category);
+        } else {
+            result = productJpaRepository.findAll();
+        }
+        return result.stream().map(this::toDomain).toList();
+    }
+
+    @Override
     public Optional<Product> getProductById(Long id){
         return productJpaRepository.findById(id).map(this::toDomain);
     }
@@ -36,20 +51,6 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
     @Override
     public boolean existsBySku(String sku) {
         return productJpaRepository.existsBySku(sku);
-    }
-
-    @Override
-    public void deactivateProduct(Long id){
-        Product productToDeactivate = productJpaRepository.findById(id).map(this::toDomain).get();
-        ProductStatus productStatus = ProductStatus.INACTIVE;
-        productToDeactivate.setProductStatus(productStatus);
-    }
-
-    @Override
-    public void activateProduct(Long id){
-        Product productToDeactivate = productJpaRepository.findById(id).map(this::toDomain).get();
-        ProductStatus productStatus = ProductStatus.ACTIVE;
-        productToDeactivate.setProductStatus(productStatus);
     }
 
     private ProductJpaEntity toEntity(Product product){
@@ -64,10 +65,6 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
                         entity.getMinPrice(), entity.getCategory()
                 );
     }
-
-
-
-
-
-
 }
+
+

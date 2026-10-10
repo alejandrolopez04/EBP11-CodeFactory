@@ -3,6 +3,8 @@ package com.codefactory.pricing_dinamico.infrastructure.adapter.in.rest;
 import com.codefactory.pricing_dinamico.application.port.in.CreateProductUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.GetAllProductsUseCase;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
+import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +29,8 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> getAllProducts() {
-        return getAllProductsUseCase.getAllProducts();
+    public List<Product> getProducts(@RequestParam(required = false) ProductStatus status,
+                                     @RequestParam(required = false) String category) {
+        return getAllProductsUseCase.getProducts(status, category);
     }
 }

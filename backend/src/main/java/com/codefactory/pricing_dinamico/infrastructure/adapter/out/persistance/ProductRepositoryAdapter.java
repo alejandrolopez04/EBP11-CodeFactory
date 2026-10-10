@@ -29,6 +29,21 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
     }
 
     @Override
+    public List<Product> findByFilters(ProductStatus status, String category){
+        List<ProductJpaEntity> result;
+        if (status != null && category != null) {
+            result = productJpaRepository.findByProductStatusAndCategory(status, category);
+        } else if (status != null) {
+            result = productJpaRepository.findByProductStatus(status);
+        } else if (category != null) {
+            result = productJpaRepository.findByCategory(category);
+        } else {
+            result = productJpaRepository.findAll();
+        }
+        return result.stream().map(this::toDomain).toList();
+    }
+
+    @Override
     public Optional<Product> getProductById(Long id){
         return productJpaRepository.findById(id).map(this::toDomain);
     }

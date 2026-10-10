@@ -47,7 +47,7 @@ public class PricingEngineService implements CalculateFinalPriceUseCase {
             .filter(rule -> rule.getRuleStatus() == RuleStatus.ACTIVE)
             .filter(rule -> rule.getProductIds() != null && rule.getProductIds().contains(product.getId().intValue()))
             .filter(rule -> matchesCurrentVariable(rule, currentVariables))
-            .sorted((r1, r2) -> Integer.compare(r1.getId(), r2.getId()))
+            .sorted(PricingRule.BY_PRIORITY)
             .collect(Collectors.toList());
 
         BigDecimal price = product.getBasePrice();

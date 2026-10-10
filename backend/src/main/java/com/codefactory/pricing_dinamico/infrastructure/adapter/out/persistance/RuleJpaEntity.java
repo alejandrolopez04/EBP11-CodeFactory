@@ -37,6 +37,9 @@ public class RuleJpaEntity {
     @Enumerated(EnumType.STRING)
     private RuleStatus ruleStatus;
 
+    @Column(name = "priority")
+    private java.lang.Integer priority;
+
     public RuleJpaEntity(java.lang.Integer id, VariableType variableType, RuleStatus ruleStatus , VariableLevel level, EffectType effectType, BigDecimal effectValue, List<Integer> productIds) {
         this.id = id;
         this.variableType = variableType;
@@ -86,4 +89,8 @@ public class RuleJpaEntity {
     public BigDecimal getEffectValue() {return effectValue;}
 
     public EffectType getEffectType() {return effectType;}
+
+    public java.lang.Integer getPriority() {return priority;}
+
+    public void setPriority(java.lang.Integer priority) {this.priority = priority;}
 }

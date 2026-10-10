@@ -48,25 +48,37 @@ public class RuleRepositoryAdapter implements RuleRepositoryPort {
         ruleToDeactivate.setRuleStatus(ruleStatus);
     }
 
+    @Override
+    public List<PricingRule> saveAll(List<PricingRule> rules) {
+        List<RuleJpaEntity> entities = rules.stream().map(this::toEntity).toList();
+        return ruleJpaRepository.saveAll(entities).stream().map(this::toDomain).toList();
+    }
+
     private RuleJpaEntity toEntity(PricingRule pricingRule) {
+        RuleJpaEntity entity;
         if (pricingRule.getVariableType() == VariableType.DEMANDA ||
                 pricingRule.getVariableType() == VariableType.DISPONIBILIDAD) {
-            return new RuleJpaEntity(pricingRule.getId(), pricingRule.getVariableType(), pricingRule.getRuleStatus(),pricingRule.getLevel(),
+            entity = new RuleJpaEntity(pricingRule.getId(), pricingRule.getVariableType(), pricingRule.getRuleStatus(),pricingRule.getLevel(),
                     pricingRule.getEffectType(), pricingRule.getEffectValue(), pricingRule.getProductIds());
+        } else {
+            entity = new RuleJpaEntity(pricingRule.getId(), pricingRule.getVariableType(), pricingRule.getRuleStatus(), pricingRule.getTimeCondition(), pricingRule.getEffectType(), pricingRule.getEffectValue(), pricingRule.getProductIds());
         }
-
-        return new RuleJpaEntity(pricingRule.getId(), pricingRule.getVariableType(), pricingRule.getRuleStatus(), pricingRule.getTimeCondition(), pricingRule.getEffectType(), pricingRule.getEffectValue(), pricingRule.getProductIds());
+        entity.setPriority(pricingRule.getPriority());
+        return entity;
     }
 
     private PricingRule toDomain(RuleJpaEntity entity){
-            if (entity.getVariableType() == VariableType.DEMANDA ||
-                    entity.getVariableType() == VariableType.DISPONIBILIDAD) {
-                return new PricingRule(entity.getId(),
-                        entity.getVariableType(), entity.getRuleStatus(), entity.getLevel(), entity.getEffectType(), entity.getEffectValue(), entity.getProductIds());
-            }
-
-            return new PricingRule(entity.getId(),
+        PricingRule rule;
+        if (entity.getVariableType() == VariableType.DEMANDA ||
+                entity.getVariableType() == VariableType.DISPONIBILIDAD) {
+            rule = new PricingRule(entity.getId(),
+                    entity.getVariableType(), entity.getRuleStatus(), entity.getLevel(), entity.getEffectType(), entity.getEffectValue(), entity.getProductIds());
+        } else {
+            rule = new PricingRule(entity.getId(),
                     entity.getVariableType(), entity.getRuleStatus(), entity.getTimeCondition(), entity.getEffectType(), entity.getEffectValue(), entity.getProductIds());
+        }
+        rule.setPriority(entity.getPriority());
+        return rule;
     }
 
 }

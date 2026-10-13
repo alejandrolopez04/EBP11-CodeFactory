@@ -53,20 +53,6 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
         return productJpaRepository.existsBySku(sku);
     }
 
-    @Override
-    public void deactivateProduct(Long id){
-        Product productToDeactivate = productJpaRepository.findById(id).map(this::toDomain).get();
-        ProductStatus productStatus = ProductStatus.INACTIVE;
-        productToDeactivate.setProductStatus(productStatus);
-    }
-
-    @Override
-    public void activateProduct(Long id){
-        Product productToDeactivate = productJpaRepository.findById(id).map(this::toDomain).get();
-        ProductStatus productStatus = ProductStatus.ACTIVE;
-        productToDeactivate.setProductStatus(productStatus);
-    }
-
     private ProductJpaEntity toEntity(Product product){
         return new ProductJpaEntity(product.getId(),
                 product.getSku(), product.getName(), product.getProductStatus(), product.getBasePrice(), product.getMaxPrice(), product.getMinPrice(), product.getCategory()
@@ -79,10 +65,6 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
                         entity.getMinPrice(), entity.getCategory()
                 );
     }
-
-
-
-
-
-
 }
+
+

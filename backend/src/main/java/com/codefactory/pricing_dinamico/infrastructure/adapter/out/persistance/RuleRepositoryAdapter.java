@@ -64,6 +64,8 @@ public class RuleRepositoryAdapter implements RuleRepositoryPort {
             entity = new RuleJpaEntity(pricingRule.getId(), pricingRule.getVariableType(), pricingRule.getRuleStatus(), pricingRule.getTimeCondition(), pricingRule.getEffectType(), pricingRule.getEffectValue(), pricingRule.getProductIds());
         }
         entity.setPriority(pricingRule.getPriority());
+        entity.setValidFrom(pricingRule.getValidFrom());
+        entity.setValidTo(pricingRule.getValidTo());
         return entity;
     }
 
@@ -78,6 +80,8 @@ public class RuleRepositoryAdapter implements RuleRepositoryPort {
                     entity.getVariableType(), entity.getRuleStatus(), entity.getTimeCondition(), entity.getEffectType(), entity.getEffectValue(), entity.getProductIds());
         }
         rule.setPriority(entity.getPriority());
+        rule.setValidFrom(entity.getValidFrom());
+        rule.setValidTo(entity.getValidTo());
         return rule;
     }
 

@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 
 import java.lang.Integer;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -39,6 +40,12 @@ public class RuleJpaEntity {
 
     @Column(name = "priority")
     private java.lang.Integer priority;
+
+    @Column(name = "valid_from")
+    private LocalDateTime validFrom;
+
+    @Column(name = "valid_to")
+    private LocalDateTime validTo;
 
     public RuleJpaEntity(java.lang.Integer id, VariableType variableType, RuleStatus ruleStatus , VariableLevel level, EffectType effectType, BigDecimal effectValue, List<Integer> productIds) {
         this.id = id;
@@ -93,4 +100,12 @@ public class RuleJpaEntity {
     public java.lang.Integer getPriority() {return priority;}
 
     public void setPriority(java.lang.Integer priority) {this.priority = priority;}
+
+    public LocalDateTime getValidFrom() {return validFrom;}
+
+    public void setValidFrom(LocalDateTime validFrom) {this.validFrom = validFrom;}
+
+    public LocalDateTime getValidTo() {return validTo;}
+
+    public void setValidTo(LocalDateTime validTo) {this.validTo = validTo;}
 }

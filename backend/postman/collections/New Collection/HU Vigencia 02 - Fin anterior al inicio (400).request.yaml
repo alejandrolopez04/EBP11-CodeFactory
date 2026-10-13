@@ -1,0 +1,7 @@
+$kind: http-request
+url: http://localhost:8080/api/pricing_rules
+method: POST
+body:
+  type: json
+  content: '{ "variableType": "DEMANDA", "level": "ALTO", "effectType": "VALOR", "effectValue": 50, "productIds": [1], "validFrom": "2027-12-31T18:00:00", "validTo": "2026-10-01T08:00:00" }'
+order: 1790000000012

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,6 +39,7 @@ public class RuleService implements CreateRuleUseCase, GetRulesUseCase, Prioriti
             throw new IllegalArgumentException("Seleccione al menos un producto.");
         }
 
+        validateValidityPeriod(pricingRule);
         validateEffectAgainstProductRange(pricingRule);
         pricingRule.setRuleStatus(RuleStatus.ACTIVE);
         pricingRule.setPriority(nextPriority());
@@ -80,6 +82,7 @@ public class RuleService implements CreateRuleUseCase, GetRulesUseCase, Prioriti
         Map<Integer, PricingRule> rulesById = new HashMap<>();
         allRules.forEach(rule -> rulesById.put(rule.getId(), rule));
 
+        LocalDateTime now = PricingRule.currentBusinessTime();
         Set<Integer> affectedProducts = new TreeSet<>();
         for (Integer ruleId : requested.keySet()) {
             PricingRule rule = rulesById.get(ruleId);
@@ -100,7 +103,9 @@ public class RuleService implements CreateRuleUseCase, GetRulesUseCase, Prioriti
         for (Integer affectedProductId : affectedProducts) {
             Map<Integer, Integer> ruleByPriority = new HashMap<>();
             for (PricingRule rule : allRules) {
-                if (rule.getRuleStatus() != RuleStatus.ACTIVE || !containsProduct(rule, affectedProductId.longValue())) {
+                // una regla con vigencia ya terminada no volverá a aplicarse: no ocupa su número de prioridad
+                if (rule.getRuleStatus() != RuleStatus.ACTIVE || rule.hasExpiredAt(now)
+                        || !containsProduct(rule, affectedProductId.longValue())) {
                     continue;
                 }
                 Integer effective = requested.getOrDefault(rule.getId(), rule.getPriority());
@@ -118,6 +123,20 @@ public class RuleService implements CreateRuleUseCase, GetRulesUseCase, Prioriti
         ruleRepositoryPort.saveAll(toSave);
 
         return getRules(productId);
+    }
+
+    private void validateValidityPeriod(PricingRule rule) {
+        boolean hasFrom = rule.getValidFrom() != null;
+        boolean hasTo = rule.getValidTo() != null;
+        if (!hasFrom && !hasTo) {
+            return; // sin vigencia programada: la regla aplica siempre (como las reglas anteriores a esta HU)
+        }
+        if (hasFrom != hasTo) {
+            throw new IllegalArgumentException("Defina la fecha de inicio y la fecha de fin de la vigencia.");
+        }
+        if (!rule.getValidFrom().isBefore(rule.getValidTo())) {
+            throw new IllegalArgumentException("La fecha de fin debe ser posterior a la fecha de inicio de la vigencia.");
+        }
     }
 
     private boolean containsProduct(PricingRule rule, Long productId) {

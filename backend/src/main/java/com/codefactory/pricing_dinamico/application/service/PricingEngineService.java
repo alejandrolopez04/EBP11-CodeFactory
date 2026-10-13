@@ -43,11 +43,14 @@ public class PricingEngineService implements CalculateFinalPriceUseCase {
             .stream()
             .collect(Collectors.toMap(BusinessVariable::getVariableType, v -> v));
 
+        LocalDateTime now = PricingRule.currentBusinessTime();
+
         List<PricingRule> applicableRules = ruleRepositoryPort.getRules().stream()
             .filter(rule -> rule.getRuleStatus() == RuleStatus.ACTIVE)
+            .filter(rule -> rule.isInEffectAt(now))   // fuera de vigencia: no se evalúa aunque siga "Activa"
             .filter(rule -> rule.getProductIds() != null && rule.getProductIds().contains(product.getId().intValue()))
             .filter(rule -> matchesCurrentVariable(rule, currentVariables))
-            .sorted((r1, r2) -> Integer.compare(r1.getId(), r2.getId()))
+            .sorted(PricingRule.BY_PRIORITY)
             .collect(Collectors.toList());
 
         BigDecimal price = product.getBasePrice();

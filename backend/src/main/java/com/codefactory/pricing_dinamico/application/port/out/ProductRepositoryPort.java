@@ -1,5 +1,6 @@
 package com.codefactory.pricing_dinamico.application.port.out;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
+import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -10,6 +11,8 @@ public interface ProductRepositoryPort {
     Product save(Product product);
 
     List<Product> getAllProducts();
+
+    List<Product> findByFilters(ProductStatus status, String category);
 
     Optional<Product> getProductById(Long id);
 

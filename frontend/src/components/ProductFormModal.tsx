@@ -15,6 +15,8 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
     sku: "",
     name: "",
     category: "",
+    stock: "",
+    demanda: "",
     base: "",
     min: "",
     max: "",
@@ -27,8 +29,19 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
   const handleSubmit = async () => {
     setError(null);
 
-    if (!form.sku || !form.name || !form.category || !form.base || !form.min || !form.max) {
+    if (!form.sku || !form.name || !form.category || !form.stock || !form.demanda || !form.base || !form.min || !form.max) {
       setError("Todos los campos son obligatorios.");
+      return;
+    }
+
+    const stockNum = parseFloat(form.stock);
+    const demandaNum = parseFloat(form.demanda);
+    if (isNaN(stockNum) || stockNum < 0 || stockNum > 100) {
+      setError("El Stock debe estar entre 0 y 100.");
+      return;
+    }
+    if (isNaN(demandaNum) || demandaNum < 0 || demandaNum > 100) {
+      setError("La Demanda debe estar entre 0 y 100.");
       return;
     }
 
@@ -52,7 +65,7 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
       return;
     }
 
-
+    
 
     setLoading(true);
     try {
@@ -63,6 +76,8 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
           sku: form.sku,
           name: form.name,
           category: form.category,
+          stock: stockNum,
+          demanda: demandaNum,
           basePrice: Number(form.base),
           minPrice: Number(form.min),
           maxPrice: Number(form.max),
@@ -139,6 +154,40 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
               <option value="">Seleccionar categoría…</option>
               {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
             </select>
+          </div>
+
+          {/* Stock y Demanda */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[12px] font-semibold text-[#374151] mb-1">Stock (%)</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={form.stock}
+                  onChange={(e) => update("stock", e.target.value)}
+                  placeholder="0 - 100"
+                  className="w-full pl-3 pr-8 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] focus:border-transparent placeholder-[#9ca3af] text-[#0f1117]"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-[#9ca3af]">%</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-semibold text-[#374151] mb-1">Demanda (%)</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={form.demanda}
+                  onChange={(e) => update("demanda", e.target.value)}
+                  placeholder="0 - 100"
+                  className="w-full pl-3 pr-8 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] focus:border-transparent placeholder-[#9ca3af] text-[#0f1117]"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-[#9ca3af]">%</span>
+              </div>
+            </div>
           </div>
 
           {/* Precios */}

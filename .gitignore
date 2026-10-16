@@ -1,7 +1,27 @@
+# ==========================================
+# FRONTEND (Node.js, Vite, React)
+# ==========================================
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos de bloqueo (Elige uno y elimina los otros si quieres)
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock
+
+# ==========================================
+# BACKEND (Java, Spring Boot, Maven)
+# ==========================================
 HELP.md
 target/
-.env
-.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
@@ -32,3 +52,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ==========================================
+# DOCKER Y SISTEMA OPERATIVO
+# ==========================================
+*.log
+.DS_Store
+Thumbs.db

@@ -8,20 +8,54 @@ const nav = [
   { id: "history", label: "Historial de Precios", icon: HistoryIcon },
 ] as const;
 
-export default function Sidebar({ active, onNavigate }: { active: Screen; onNavigate: (s: Screen) => void }) {
+export default function Sidebar({ 
+  active, 
+  onNavigate, 
+  isCollapsed, 
+  toggleSidebar 
+}: { 
+  active: Screen; 
+  onNavigate: (s: Screen) => void; 
+  isCollapsed: boolean; 
+  toggleSidebar: () => void; 
+}) {
   return (
-    <aside className="w-60 bg-white border-r border-[#e2e6ed] flex flex-col shrink-0">
-      <div className="px-5 py-5 border-b border-[#e2e6ed]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded bg-[#1a56db] flex items-center justify-center">
+    <aside className={`bg-white border-r border-[#e2e6ed] flex flex-col shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-60'}`}>
+      
+      {/* HEADER */}
+      <div className={`py-5 border-b border-[#e2e6ed] flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-5 justify-between'}`}>
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <div className="w-7 h-7 rounded bg-[#1a56db] flex items-center justify-center shrink-0">
             <span className="text-white text-xs font-bold font-display">P</span>
           </div>
-          <div>
-            <div className="text-[13px] font-semibold text-[#0f1117] font-display leading-tight">PricingEngine</div>
-            <div className="text-[10px] text-[#6b7280] font-medium">Motor Dinámico</div>
-          </div>
+          {!isCollapsed && (
+            <div className="whitespace-nowrap">
+              <div className="text-[13px] font-semibold text-[#0f1117] font-display leading-tight">PricingEngine</div>
+              <div className="text-[10px] text-[#6b7280] font-medium">Motor Dinámico</div>
+            </div>
+          )}
         </div>
+        
+        {/* Botón para colapsar (solo visible cuando está expandido) */}
+        {!isCollapsed && (
+          <button onClick={toggleSidebar} className="text-gray-400 hover:text-gray-700 transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+        )}
       </div>
+
+      {/* Botón para expandir (solo visible cuando está colapsado) */}
+      {isCollapsed && (
+        <button onClick={toggleSidebar} className="mt-4 mx-auto text-gray-400 hover:text-gray-700 transition-colors">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      )}
+
+      {/* NAVEGACIÓN */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {nav.map(({ id, label, icon: Icon }) => {
           const isActive = active === id;
@@ -29,28 +63,33 @@ export default function Sidebar({ active, onNavigate }: { active: Screen; onNavi
             <button
               key={id}
               onClick={() => onNavigate(id as Screen)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[6px] text-left transition-all text-[13px] font-medium ${
+              title={isCollapsed ? label : undefined}
+              className={`w-full flex items-center rounded-[6px] text-left transition-all text-[13px] font-medium ${
+                isCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3 py-2.5'
+              } ${
                 isActive
                   ? "bg-[#1a56db] text-white"
                   : "text-[#374151] hover:bg-[#f1f3f7] hover:text-[#0f1117]"
               }`}
             >
               <Icon size={16} active={isActive} />
-              {label}
+              {!isCollapsed && <span className="whitespace-nowrap">{label}</span>}
             </button>
           );
         })}
       </nav>
-      <div className="px-4 py-4 border-t border-[#e2e6ed]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-[#e8ecf2] flex items-center justify-center">
-            <span className="text-[11px] font-semibold text-[#374151] font-display">AM</span>
-          </div>
-          <div>
+
+      {/* FOOTER (Perfil) */}
+      <div className={`py-4 border-t border-[#e2e6ed] flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-4 gap-2.5'}`}>
+        <div className="w-7 h-7 rounded-full bg-[#e8ecf2] flex items-center justify-center shrink-0">
+          <span className="text-[11px] font-semibold text-[#374151] font-display">AM</span>
+        </div>
+        {!isCollapsed && (
+          <div className="whitespace-nowrap overflow-hidden">
             <div className="text-[12px] font-semibold text-[#0f1117]">Ana Martínez</div>
             <div className="text-[10px] text-[#6b7280]">Administrador</div>
           </div>
-        </div>
+        )}
       </div>
     </aside>
   );

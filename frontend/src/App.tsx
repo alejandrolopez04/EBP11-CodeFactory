@@ -13,12 +13,20 @@ export type Screen = "dashboard" | "products" | "rules" | "variables" | "history
 
 export default function App() {
     const [activeScreen, setActiveScreen] = useState<Screen>("products");
+    
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     return (
         <BusinessVariablesProvider>
             <AppGate>
                 <div className="flex h-full bg-[#f4f5f7]">
-                    <Sidebar active={activeScreen} onNavigate={setActiveScreen} />
+                    <Sidebar 
+                        active={activeScreen} 
+                        onNavigate={setActiveScreen} 
+                        isCollapsed={isSidebarCollapsed}
+                        toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                    />
+                    
                     <main className="flex-1 overflow-auto">
                         {activeScreen === "dashboard" && <DashboardScreen />}
                         {activeScreen === "products" && <ProductsScreen onViewDetail={() => setActiveScreen("product-detail")} />}

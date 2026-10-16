@@ -3,14 +3,14 @@ import ProductFormModal from "./ProductFormModal";
 import Toast from "./Toast"
 
 const PRODUCTS = [
-  { sku: "SUB-PRE-001", name: "Suscripción Premium Mensual", category: "Suscripciones", base: 29900, min: 24900, max: 39900, status: "Activo" },
-  { sku: "SUB-BAS-002", name: "Suscripción Básica Mensual", category: "Suscripciones", base: 9900, min: 7900, max: 14900, status: "Activo" },
-  { sku: "ENV-EXP-003", name: "Envío Express 24h", category: "Envíos", base: 5900, min: 4900, max: 8900, status: "Activo" },
-  { sku: "ENV-STD-004", name: "Envío Estándar 5 días", category: "Envíos", base: 2900, min: 1900, max: 4500, status: "Activo" },
-  { sku: "ENT-VIP-005", name: "Entrada VIP Evento Anual", category: "Entradas", base: 150000, min: 120000, max: 220000, status: "Activo" },
-  { sku: "ENT-GEN-006", name: "Entrada General Evento", category: "Entradas", base: 45000, min: 35000, max: 65000, status: "Inactivo" },
-  { sku: "ALC-CORP-007", name: "Almacenamiento Corporativo 1TB", category: "Almacenamiento", base: 19900, min: 14900, max: 29900, status: "Activo" },
-  { sku: "SOP-PRE-008", name: "Soporte Prioritario 24/7", category: "Soporte", base: 49900, min: 39900, max: 69900, status: "Inactivo" },
+  { sku: "SUB-PRE-001", name: "Suscripción Premium Mensual", category: "Suscripciones", stock: 45, demanda: 82, base: 29900, min: 24900, max: 39900, status: "Activo" },
+  { sku: "SUB-BAS-002", name: "Suscripción Básica Mensual", category: "Suscripciones", stock: 78, demanda: 65, base: 9900, min: 7900, max: 14900, status: "Activo" },
+  { sku: "ENV-EXP-003", name: "Envío Express 24h", category: "Envíos", stock: 92, demanda: 71, base: 5900, min: 4900, max: 8900, status: "Activo" },
+  { sku: "ENV-STD-004", name: "Envío Estándar 5 días", category: "Envíos", stock: 60, demanda: 48, base: 2900, min: 1900, max: 4500, status: "Activo" },
+  { sku: "ENT-VIP-005", name: "Entrada VIP Evento Anual", category: "Entradas", stock: 25, demanda: 95, base: 150000, min: 120000, max: 220000, status: "Activo" },
+  { sku: "ENT-GEN-006", name: "Entrada General Evento", category: "Entradas", stock: 88, demanda: 40, base: 45000, min: 35000, max: 65000, status: "Inactivo" },
+  { sku: "ALC-CORP-007", name: "Almacenamiento Corporativo 1TB", category: "Almacenamiento", stock: 55, demanda: 62, base: 19900, min: 14900, max: 29900, status: "Activo" },
+  { sku: "SOP-PRE-008", name: "Soporte Prioritario 24/7", category: "Soporte", stock: 70, demanda: 33, base: 49900, min: 39900, max: 69900, status: "Inactivo" },
 ];
 
 function fmt(n: number) {
@@ -90,6 +90,8 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
                   <th className="text-left px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">SKU</th>
                   <th className="text-left px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Nombre</th>
                   <th className="text-left px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Categoría</th>
+                  <th className="text-center px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide w-20">Stock</th>
+                  <th className="text-center px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide w-20">Demanda</th>
                   <th className="text-right px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Precio base</th>
                   <th className="text-right px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Mínimo</th>
                   <th className="text-right px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Máximo</th>
@@ -103,6 +105,8 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
                     <td className="px-4 py-3 font-mono text-[12px] text-[#6b7280]">{p.sku}</td>
                     <td className="px-4 py-3 font-medium text-[#0f1117]">{p.name}</td>
                     <td className="px-4 py-3 text-[#6b7280]">{p.category}</td>
+                    <td className="px-4 py-3 text-center text-[12px] font-medium text-[#0f1117] tabular-nums">{p.stock}%</td>
+                    <td className="px-4 py-3 text-center text-[12px] font-medium text-[#0f1117] tabular-nums">{p.demanda}%</td>
                     <td className="px-4 py-3 text-right font-medium text-[#0f1117]">{fmt(p.base)}</td>
                     <td className="px-4 py-3 text-right text-[#6b7280]">{fmt(p.min)}</td>
                     <td className="px-4 py-3 text-right text-[#6b7280]">{fmt(p.max)}</td>

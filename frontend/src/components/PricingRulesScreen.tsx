@@ -3,20 +3,121 @@ import RuleFormModal from "./RuleFormModal";
 import ProductFormModal from "@/components/ProductFormModal.tsx";
 import Toast from "@/components/Toast.tsx";
 
-const RULES = [
-  { id: "RGL-001", name: "Recargo hora pico", condition: "Horario = Hora pico", effect: "+18%", products: ["Envío Express 24h", "Suscripción Premium"], more: 2, status: true },
-  { id: "RGL-002", name: "Descuento baja demanda", condition: "Demanda < Baja", effect: "−12%", products: ["Entrada General Evento"], more: 0, status: true },
-  { id: "RGL-003", name: "Promoción fin de semana", condition: "Horario = Fin de semana", effect: "−$3.000", products: ["Suscripción Básica Mensual"], more: 1, status: true },
-  { id: "RGL-004", name: "Ajuste alta demanda", condition: "Demanda > Alta", effect: "+22%", products: ["Entrada VIP Evento"], more: 0, status: true },
-  { id: "RGL-005", name: "Stock crítico", condition: "Disponibilidad < 10%", effect: "+30%", products: ["Almacenamiento Corp.", "Soporte Prioritario"], more: 0, status: false },
-  { id: "RGL-006", name: "Temporada alta", condition: "Horario = Temporada alta", effect: "+15%", products: ["Entrada VIP Evento"], more: 3, status: true },
-  { id: "RGL-007", name: "Incentivo disponibilidad", condition: "Disponibilidad > 80%", effect: "−8%", products: ["Envío Estándar 5 días"], more: 0, status: false },
+interface Rule {
+  id: string;
+  name: string;
+  condition: string;
+  effect: string;
+  validFrom: string;
+  validTo: string;
+  products: string[];
+  status: boolean;
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  return `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
+}
+
+const MAX_VISIBLE_PRODUCTS = 1;
+const RULES: Rule[] = [
+  {
+    id: "RGL-001",
+    name: "Recargo hora pico",
+    condition: "Horario = Hora pico",
+    effect: "+18%",
+    validFrom: "2026-10-01T08:00",
+    validTo: "2026-12-31T20:00",
+    products: ["Envío Express 24h", "Suscripción Premium", "Suscripción Básica", "Almacenamiento Corp.", "Soporte Prioritario"],
+    status: true,
+  },
+  {
+    id: "RGL-002",
+    name: "Descuento baja demanda",
+    condition: "Demanda < Baja",
+    effect: "−12%",
+    validFrom: "2026-09-15T00:00",
+    validTo: "2026-10-15T23:59",
+    products: ["Entrada General Evento", "Entrada VIP Evento", "Suscripción Básica"],
+    status: true,
+  },
+  {
+    id: "RGL-003",
+    name: "Promoción fin de semana",
+    condition: "Horario = Fin de semana",
+    effect: "−$3.000",
+    validFrom: "2026-10-01T00:00",
+    validTo: "2026-11-30T23:59",
+    products: ["Suscripción Básica Mensual", "Envío Estándar 5 días", "Envío Express 24h", "Soporte Prioritario"],
+    status: true,
+  },
+  {
+    id: "RGL-004",
+    name: "Ajuste alta demanda",
+    condition: "Demanda > Alta",
+    effect: "+22%",
+    validFrom: "2026-10-10T09:00",
+    validTo: "2026-12-15T18:00",
+    products: ["Entrada VIP Evento", "Envío Express 24h"],
+    status: true,
+  },
+  {
+    id: "RGL-005",
+    name: "Stock crítico",
+    condition: "Disponibilidad < 10%",
+    effect: "+30%",
+    validFrom: "2026-11-01T00:00",
+    validTo: "2026-12-31T23:59",
+    products: ["Almacenamiento Corp.", "Soporte Prioritario", "Suscripción Premium", "Envío Express 24h", "Entrada VIP Evento", "Entrada General Evento"],
+    status: false,
+  },
+  {
+    id: "RGL-006",
+    name: "Temporada alta",
+    condition: "Horario = Temporada alta",
+    effect: "+15%",
+    validFrom: "2026-12-01T00:00",
+    validTo: "2027-01-15T23:59",
+    products: ["Entrada VIP Evento"],
+    status: true,
+  },
+  {
+    id: "RGL-007",
+    name: "Incentivo disponibilidad",
+    condition: "Disponibilidad > 80%",
+    effect: "−8%",
+    validFrom: "2026-10-01T00:00",
+    validTo: "2026-10-10T23:59",
+    products: ["Envío Estándar 5 días", "Suscripción Básica", "Almacenamiento Corp."],
+    status: false,
+  },
 ];
+
+function DateCell({ iso }: { iso: string }) {
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="text-[12px] font-medium text-[#0f1117] tabular-nums">{formatDate(iso)}</span>
+      <span className="text-[11px] text-[#6b7280] tabular-nums">{formatTime(iso)}</span>
+    </div>
+  );
+}
 
 export default function PricingRulesScreen() {
   const [showModal, setShowModal] = useState(false);
   const [confirmRule, setConfirmRule] = useState<string | null>(null);
-  const [rules, setRules] = useState(RULES);
+  const [rules, setRules] = useState<Rule[]>(RULES);
   const [toast, setToast] = useState<string | null>(null);
 
   const toggleStatus = (id: string) => {
@@ -38,77 +139,102 @@ export default function PricingRulesScreen() {
         </button>
       </div>
 
-      <div className="bg-white border border-[#e2e6ed] rounded-[8px] overflow-hidden">
-        <table className="w-full text-[13px]">
+      <div className="bg-white border border-[#e2e6ed] rounded-[8px] overflow-x-auto">
+        <table className="w-full text-[13px] table-fixed min-w-[1100px]">
           <thead>
             <tr className="border-b border-[#e2e6ed] bg-[#f8f9fb]">
-              <th className="text-left px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Nombre / ID</th>
-              <th className="text-left px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Condición</th>
-              <th className="text-left px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Efecto</th>
-              <th className="text-left px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Productos</th>
-              <th className="text-center px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Estado</th>
-              <th className="text-right px-4 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Acciones</th>
+              <th className="w-[15%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Nombre / ID</th>
+              <th className="w-[14%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Condición</th>
+              <th className="w-[7%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Efecto</th>
+              <th className="w-[11%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Desde</th>
+              <th className="w-[11%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Hasta</th>
+              <th className="w-[20%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Productos</th>
+              <th className="w-[10%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Estado</th>
+              <th className="w-[12%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {rules.map((r, i) => (
-              <tr key={r.id} className={`border-b border-[#f1f3f7] hover:bg-[#f8f9fb] transition-colors ${i === rules.length - 1 ? "border-none" : ""}`}>
-                <td className="px-4 py-3">
-                  <div className="font-medium text-[#0f1117]">{r.name}</div>
-                  <div className="font-mono text-[11px] text-[#9ca3af] mt-0.5">{r.id}</div>
-                </td>
-                <td className="px-4 py-3 text-[#374151]">{r.condition}</td>
-                <td className="px-4 py-3">
-                  <span className={`font-semibold font-mono text-[12px] ${r.effect.startsWith("+") ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
-                    {r.effect}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {r.products.slice(0, 1).map((p) => (
-                      <span key={p} className="px-2 py-0.5 bg-[#e8ecf2] text-[#374151] text-[11px] rounded-full font-medium">{p}</span>
-                    ))}
-                    {r.products.length > 1 && (
-                      <span className="px-2 py-0.5 bg-[#f1f3f7] text-[#6b7280] text-[11px] rounded-full">+{r.products.length - 1} más</span>
-                    )}
-                    {r.more > 0 && (
-                      <span className="px-2 py-0.5 bg-[#f1f3f7] text-[#6b7280] text-[11px] rounded-full">+{r.more} más</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                    r.status ? "bg-[#dcfce7] text-[#16a34a]" : "bg-[#f1f3f7] text-[#9ca3af]"
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${r.status ? "bg-[#16a34a]" : "bg-[#9ca3af]"}`} />
-                    {r.status ? "Activa" : "Inactiva"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <button className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver">
-                      <EyeIcon />
-                    </button>
-                    <button className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Editar">
-                      <EditIcon />
-                    </button>
-                    <button
-                      onClick={() => setConfirmRule(r.id)}
-                      className={`px-2 py-1 rounded-[4px] text-[11px] font-semibold transition-colors ${
-                        r.status
-                          ? "text-[#dc2626] hover:bg-[#fef2f2]"
-                          : "text-[#16a34a] hover:bg-[#dcfce7]"
-                      }`}
-                    >
-                      {r.status ? "Desactivar" : "Activar"}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {rules.map((r, i) => {
+              const visibleProducts = r.products.slice(0, MAX_VISIBLE_PRODUCTS);
+              const hiddenCount = r.products.length - MAX_VISIBLE_PRODUCTS;
+
+              return (
+                <tr key={r.id} className={`border-b border-[#f1f3f7] hover:bg-[#f8f9fb] transition-colors ${i === rules.length - 1 ? "border-none" : ""}`}>
+                  <td className="px-3 py-3">
+                    <div className="font-medium text-[#0f1117] truncate" title={r.name}>{r.name}</div>
+                    <div className="font-mono text-[11px] text-[#9ca3af] mt-0.5">{r.id}</div>
+                  </td>
+
+                  <td className="px-3 py-3 text-[#374151] truncate" title={r.condition}>{r.condition}</td>
+
+                  <td className="px-3 py-3 text-center">
+                    <span className={`font-semibold font-mono text-[12px] ${r.effect.startsWith("+") ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
+                      {r.effect}
+                    </span>
+                  </td>
+
+                  <td className="px-3 py-3">
+                    <DateCell iso={r.validFrom} />
+                  </td>
+
+                  <td className="px-3 py-3">
+                    <DateCell iso={r.validTo} />
+                  </td>
+
+                  <td className="px-3 py-3">
+                    <div className="flex flex-wrap items-center gap-1">
+                      {visibleProducts.map((p) => (
+                        <span key={p} className="px-2 py-0.5 bg-[#e8ecf2] text-[#374151] text-[11px] rounded-full font-medium whitespace-nowrap">
+                          {p}
+                        </span>
+                      ))}
+                      {hiddenCount > 0 && (
+                        <span
+                          className="px-2 py-0.5 bg-[#f1f3f7] text-[#6b7280] text-[11px] rounded-full font-medium cursor-default"
+                          title={r.products.slice(MAX_VISIBLE_PRODUCTS).join(", ")}
+                        >
+                          +{hiddenCount}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+
+                  <td className="px-3 py-3 text-center">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                      r.status ? "bg-[#dcfce7] text-[#16a34a]" : "bg-[#f1f3f7] text-[#9ca3af]"
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${r.status ? "bg-[#16a34a]" : "bg-[#9ca3af]"}`} />
+                      {r.status ? "Activa" : "Inactiva"}
+                    </span>
+                  </td>
+
+                  <td className="px-3 py-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <button className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver">
+                        <EyeIcon />
+                      </button>
+                      <button className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Editar">
+                        <EditIcon />
+                      </button>
+                      <button
+                        onClick={() => setConfirmRule(r.id)}
+                        className={`px-2 py-1 rounded-[4px] text-[11px] font-semibold transition-colors whitespace-nowrap ${
+                          r.status
+                            ? "text-[#dc2626] hover:bg-[#fef2f2]"
+                            : "text-[#16a34a] hover:bg-[#dcfce7]"
+                        }`}
+                      >
+                        {r.status ? "Desactivar" : "Activar"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+
       {/* Confirm modal */}
       {confirmRule && ruleToConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

@@ -45,12 +45,109 @@ interface RuleFormModalProps {
   onRuleCreated?: () => void;
 }
 
+// Helpers para el DateTimeField
+const pad = (n: number) => String(n).padStart(2, "0");
+
+function toIso(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// Componente reutilizable: fecha (calendario) + hora (12H con AM/PM)
+function DateTimeField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const d = value ? new Date(value) : new Date();
+  const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const hour24 = d.getHours();
+  const ampm = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  const minute = d.getMinutes();
+
+  const build = (h24: number, min: number, newDateStr: string = dateStr) =>
+    onChange(`${newDateStr}T${pad(h24)}:${pad(min)}`);
+
+  const handleDate = (newDateStr: string) => build(hour24, minute, newDateStr);
+
+  const handleHour = (val: number) => {
+    const clamped = Math.max(1, Math.min(12, val || 1));
+    let h24 = clamped % 12;
+    if (ampm === "PM") h24 += 12;
+    build(h24, minute);
+  };
+
+  const handleMinute = (val: number) => {
+    const clamped = Math.max(0, Math.min(59, val || 0));
+    build(hour24, clamped);
+  };
+
+  const toggleAmPm = () => {
+    const newAmpm = ampm === "AM" ? "PM" : "AM";
+    let h24 = hour12 % 12;
+    if (newAmpm === "PM") h24 += 12;
+    build(h24, minute);
+  };
+
+  return (
+    <div>
+      <label className="block text-[11px] font-semibold text-[#374151] mb-1">{label}</label>
+      {/* Fecha */}
+      <input
+        type="date"
+        value={dateStr}
+        onChange={(e) => handleDate(e.target.value)}
+        className="w-full px-2 py-2 text-[12px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#0f1117]"
+      />
+      {/* Hora */}
+      <div className="flex items-center gap-1 mt-1.5">
+        <input
+          type="number"
+          min={1}
+          max={12}
+          value={hour12}
+          onChange={(e) => handleHour(Number(e.target.value))}
+          className="flex-1 min-w-0 px-1 py-2 text-[12px] text-center border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#0f1117] tabular-nums"
+        />
+        <span className="text-[#6b7280] text-[12px]">:</span>
+        <input
+          type="number"
+          min={0}
+          max={59}
+          value={pad(minute)}
+          onChange={(e) => handleMinute(Number(e.target.value))}
+          className="flex-1 min-w-0 px-1 py-2 text-[12px] text-center border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#0f1117] tabular-nums"
+        />
+        <button
+          type="button"
+          onClick={toggleAmPm}
+          className="px-2 py-2 text-[11px] font-semibold bg-[#f1f3f7] border border-[#e2e6ed] rounded-[6px] hover:bg-[#e8ecf2] text-[#374151] transition-colors shrink-0"
+        >
+          {ampm}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function RuleFormModal({ onClose, onRuleCreated }: RuleFormModalProps) {
   const [variableType, setVariableType] = useState<VariableKey>("DEMANDA");
   const [conditionValue, setConditionValue] = useState(VARIABLE_CONFIG.DEMANDA.options[0].value);
 
   const [effectType, setEffectType] = useState<"PORCENTAJE" | "VALOR">("PORCENTAJE");
   const [effectValue, setEffectValue] = useState("15");
+
+  // vigencia (Desde / Hasta)
+  const [validFrom, setValidFrom] = useState(() => toIso(new Date()));
+  const [validTo, setValidTo] = useState(() => {
+    const in30Days = new Date();
+    in30Days.setDate(in30Days.getDate() + 30);
+    return toIso(in30Days);
+  });
 
   const [allProducts, setAllProducts] = useState<ApiProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<ApiProduct[]>([]);
@@ -106,12 +203,19 @@ export default function RuleFormModal({ onClose, onRuleCreated }: RuleFormModalP
       setError("Selecciona al menos un producto para asociar a la regla.");
       return;
     }
+    // Validar vigencia
+    if (new Date(validFrom) >= new Date(validTo)) {
+      setError("La fecha 'Desde' debe ser anterior a la fecha 'Hasta'.");
+      return;
+    }
 
     const payload: Record<string, unknown> = {
       variableType,
       effectType,
       effectValue: Number(effectValue),
       productIds: selectedProducts.map((p) => p.id),
+      validFrom, // ISO "YYYY-MM-DDTHH:mm"
+      validTo,   // ISO "YYYY-MM-DDTHH:mm"
     };
     payload[currentConfig.field] = conditionValue;
 
@@ -207,6 +311,15 @@ export default function RuleFormModal({ onClose, onRuleCreated }: RuleFormModalP
             </div>
           </section>
 
+          {/* Vigencia */}
+          <section>
+            <h3 className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider mb-3">Vigencia</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <DateTimeField label="Desde" value={validFrom} onChange={setValidFrom} />
+              <DateTimeField label="Hasta" value={validTo} onChange={setValidTo} />
+            </div>
+          </section>
+
           {/* Productos asociados */}
           <section>
             <h3 className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider mb-3">Productos asociados</h3>
@@ -231,7 +344,6 @@ export default function RuleFormModal({ onClose, onRuleCreated }: RuleFormModalP
                   className="w-full text-[13px] text-[#0f1117] placeholder-[#9ca3af] focus:outline-none"
               />
 
-              {/* Lista de sugerencias, aparece justo debajo del input mientras se escribe */}
               {suggestions.length > 0 && (
                   <div className="absolute left-3 right-3 mt-1 bg-white border border-[#e2e6ed] rounded-[6px] shadow-lg z-10 max-h-40 overflow-y-auto">
                     {suggestions.map((p) => (
@@ -266,17 +378,6 @@ export default function RuleFormModal({ onClose, onRuleCreated }: RuleFormModalP
             {loading ? "Guardando..." : "Guardar regla"}
           </button>
         </div>
-
-
-        {/* Warning
-        {showWarning && (
-          <div className="mx-6 mb-4 flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-[6px]">
-            <span className="text-amber-500 mt-0.5 shrink-0">⚠</span>
-            <p className="text-[12px] text-amber-800">
-              El efecto configurado generaría un precio fuera del rango permitido para <strong>"Suscripción Básica Mensual"</strong>. Ajusta el efecto o los límites del producto.
-            </p>
-          </div>
-        )}*/}
       </div>
     </div>
   );

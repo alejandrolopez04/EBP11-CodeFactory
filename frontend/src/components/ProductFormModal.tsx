@@ -1,6 +1,7 @@
 import { useState } from "react";
-import {API_URL} from "../api/client";
-fetch(`${API_URL}/api/products`);
+import { API_URL } from "../api/client";
+
+const PRODUCTS_API_URL = `${API_URL}/api/products`;
 
 const CATEGORIES = ["Suscripciones", "Envíos", "Entradas", "Almacenamiento", "Soporte"];
 
@@ -89,7 +90,7 @@ export default function ProductFormModal({ onClose, onProductCreated, product, o
 
     setLoading(true);
     try {
-      const response = await fetch(isEdit ? `${API_URL}/${product!.id}`:API_URL, {
+      const response = await fetch(isEdit ? `${PRODUCTS_API_URL}/${product!.id}` : PRODUCTS_API_URL, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

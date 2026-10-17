@@ -7,6 +7,7 @@ import com.codefactory.pricing_dinamico.domain.model.entities.RuleStatus;
 import com.codefactory.pricing_dinamico.domain.model.entities.VariableType;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,19 +71,22 @@ public class RuleRepositoryAdapter implements RuleRepositoryPort {
     }
 
     private PricingRule toDomain(RuleJpaEntity entity){
+        List<Integer> productIds = entity.getProductIds() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(entity.getProductIds());
+
         PricingRule rule;
         if (entity.getVariableType() == VariableType.DEMANDA ||
                 entity.getVariableType() == VariableType.DISPONIBILIDAD) {
-            rule = new PricingRule(entity.getId(),
-                    entity.getVariableType(), entity.getRuleStatus(), entity.getLevel(), entity.getEffectType(), entity.getEffectValue(), entity.getProductIds());
+            rule = new PricingRule(entity.getId(), entity.getVariableType(), entity.getRuleStatus(),
+                    entity.getLevel(), entity.getEffectType(), entity.getEffectValue(), productIds);
         } else {
-            rule = new PricingRule(entity.getId(),
-                    entity.getVariableType(), entity.getRuleStatus(), entity.getTimeCondition(), entity.getEffectType(), entity.getEffectValue(), entity.getProductIds());
+            rule = new PricingRule(entity.getId(), entity.getVariableType(), entity.getRuleStatus(),
+                    entity.getTimeCondition(), entity.getEffectType(), entity.getEffectValue(), productIds);
         }
         rule.setPriority(entity.getPriority());
         rule.setValidFrom(entity.getValidFrom());
         rule.setValidTo(entity.getValidTo());
         return rule;
     }
-
 }

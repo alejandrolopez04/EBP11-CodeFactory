@@ -5,6 +5,8 @@ import com.codefactory.pricing_dinamico.domain.model.entities.Product;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,17 +60,22 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
         return productJpaRepository.existsBySkuAndIdNot(sku, id);
     }
 
+    @Override
+    public void updateCurrentPrice(Long productId, BigDecimal price, LocalDateTime at) {
+        productJpaRepository.updateCurrentPrice(productId, price, at);
+    }
+
     private ProductJpaEntity toEntity(Product product){
         return new ProductJpaEntity(product.getId(),
                 product.getSku(), product.getName(), product.getProductStatus(), product.getBasePrice(), product.getMaxPrice(),
-                product.getMinPrice(), product.getCategory(), product.getProductDemand(), product.getProductAvailability()
+                product.getMinPrice(), product.getCategory(), product.getCurrentPrice(), product.getPriceUpdatedAt() ,product.getProductDemand(), product.getProductAvailability()
         );
     };
 
     private Product toDomain(ProductJpaEntity entity){
         return new Product(entity.getId(),
                         entity.getSku(), entity.getName(), entity.getProductStatus(), entity.getBasePrice(), entity.getMaxPrice(),
-                        entity.getMinPrice(), entity.getCategory(), entity.getProductDemand(), entity.getProductAvailability()
+                        entity.getMinPrice(), entity.getCategory(), entity.getCurrentPrice(), entity.getPriceUpdatedAt(), entity.getProductDemand(), entity.getProductAvailability()
                 );
     }
 }

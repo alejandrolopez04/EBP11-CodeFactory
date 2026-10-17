@@ -33,9 +33,6 @@ public class BusinessVariableController {
 
     @PostMapping
     public ResponseEntity<List<BusinessVariable>> configure(@RequestBody List<BusinessVariable> variables) {
-        List<BusinessVariable> saved = variables.stream()
-                .map(configureBusinessVariableUseCase::configureVariable)
-                .toList();
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(configureBusinessVariableUseCase.configureVariables(variables));
     }
 }

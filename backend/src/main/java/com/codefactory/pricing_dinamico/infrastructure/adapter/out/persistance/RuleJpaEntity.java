@@ -30,7 +30,7 @@ public class RuleJpaEntity {
     private EffectType effectType;
     private BigDecimal effectValue;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "rule_product_ids", joinColumns = @JoinColumn(name = "rule_id"))
     @Column(name = "product_id")
     private List<java.lang.Integer> productIds;

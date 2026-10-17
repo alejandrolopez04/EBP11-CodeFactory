@@ -25,12 +25,10 @@ export default function Sidebar({
       {/* HEADER */}
       <div className={`py-5 border-b border-[#e2e6ed] flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-5 justify-between'}`}>
         <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="w-7 h-7 rounded bg-[#1a56db] flex items-center justify-center shrink-0">
-            <span className="text-white text-xs font-bold font-display">P</span>
-          </div>
+          <img src="/favicon.svg" alt="Pricing Engine" className="w-7 h-7 shrink-0"/>
           {!isCollapsed && (
             <div className="whitespace-nowrap">
-              <div className="text-[13px] font-semibold text-[#0f1117] font-display leading-tight">PricingEngine</div>
+              <div className="text-[13px] font-semibold text-[#0f1117] font-display leading-tight">Pricing Engine</div>
               <div className="text-[10px] text-[#6b7280] font-medium">Motor Dinámico</div>
             </div>
           )}

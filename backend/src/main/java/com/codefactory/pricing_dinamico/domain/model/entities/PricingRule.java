@@ -70,15 +70,15 @@ public class PricingRule {
     }
 
     public void activate() {
-        this.ruleStatus = RuleStatus.ACTIVA;
+        this.ruleStatus = RuleStatus.ACTIVE;
     }
 
     public void deactivate() {
-        this.ruleStatus = RuleStatus.INACTIVA;
+        this.ruleStatus = RuleStatus.INACTIVE;
     }
 
     public boolean isActive() {
-        return this.ruleStatus == RuleStatus.ACTIVA;
+        return this.ruleStatus == RuleStatus.ACTIVE;
     }
 
     public List<Integer> getProductIds() {

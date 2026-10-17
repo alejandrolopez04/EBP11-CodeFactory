@@ -1,6 +1,7 @@
 import type { BusinessVariables } from "./types";
+import { API_URL } from "../api/client";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080/api";
+const VARIABLES_URL = `${API_URL}/api/variables`;
 
 export type Section = "demand" | "availability" | "schedule";
 export const ALL_SECTIONS: Section[] = ["demand", "availability", "schedule"];
@@ -39,13 +40,13 @@ export type BackendVariable = DemandDto | AvailabilityDto | TemporalDto;
 // HTTP
 // ---------------------------------------------------------------------------
 export async function fetchRaw(signal?: AbortSignal): Promise<BackendVariable[]> {
-  const res = await fetch(`${API_URL}/variables`, { signal });
+  const res = await fetch(VARIABLES_URL, { signal });
   if (!res.ok) throw new Error(`Error ${res.status} al cargar variables`);
   return res.json();
 }
 
 export async function postRaw(items: BackendVariable[]): Promise<BackendVariable[]> {
-  const res = await fetch(`${API_URL}/variables`, {
+  const res = await fetch(VARIABLES_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(items),

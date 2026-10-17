@@ -12,7 +12,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("api/pricing_rules")
-@CrossOrigin(origins = "http://localhost:8443")
 public class PricingRuleController {
     private final CreateRuleUseCase createRuleUseCase;
     private final GetRulesUseCase getRulesUseCase;

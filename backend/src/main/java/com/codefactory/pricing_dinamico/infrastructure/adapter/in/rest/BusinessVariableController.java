@@ -4,7 +4,6 @@ import com.codefactory.pricing_dinamico.application.port.in.ConfigureBusinessVar
 import com.codefactory.pricing_dinamico.application.port.in.GetBusinessVariablesUseCase;
 import com.codefactory.pricing_dinamico.domain.model.entities.BusinessVariable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/variables")
-@CrossOrigin(origins = "http://localhost:8443")
 public class BusinessVariableController {
 
     private final ConfigureBusinessVariableUseCase configureBusinessVariableUseCase;

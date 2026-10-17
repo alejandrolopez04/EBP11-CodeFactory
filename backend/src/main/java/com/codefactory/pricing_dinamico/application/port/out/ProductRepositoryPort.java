@@ -17,4 +17,6 @@ public interface ProductRepositoryPort {
     Optional<Product> getProductById(Long id);
 
     boolean existsBySku(String sku);
+
+    boolean existsBySkuAndIdNot(String sku, Long id);
 }

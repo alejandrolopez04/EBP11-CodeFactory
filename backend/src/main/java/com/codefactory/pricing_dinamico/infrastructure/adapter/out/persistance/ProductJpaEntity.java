@@ -4,9 +4,7 @@ import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Entity
 @Table(name="products")
@@ -57,32 +55,16 @@ public class ProductJpaEntity {
         return currentPrice;
     }
 
-    public void setCurrentPrice(BigDecimal currentPrice) {
-        this.currentPrice = currentPrice;
-    }
-
     public LocalDateTime getPriceUpdatedAt() {
         return priceUpdatedAt;
-    }
-
-    public void setPriceUpdatedAt(LocalDateTime priceUpdatedAt) {
-        this.priceUpdatedAt = priceUpdatedAt;
     }
 
     public Long getProductAvailability() {
         return productAvailability;
     }
 
-    public void setProductAvailability(Long productAvailability) {
-        this.productAvailability = productAvailability;
-    }
-
     public Long getProductDemand() {
         return productDemand;
-    }
-
-    public void setProductDemand(Long productDemand) {
-        this.productDemand = productDemand;
     }
 
     public Long getId() {

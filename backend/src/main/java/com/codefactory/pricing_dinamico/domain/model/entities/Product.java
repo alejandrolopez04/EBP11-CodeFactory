@@ -1,7 +1,6 @@
 package com.codefactory.pricing_dinamico.domain.model.entities;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 public class Product {
     private final Long id;

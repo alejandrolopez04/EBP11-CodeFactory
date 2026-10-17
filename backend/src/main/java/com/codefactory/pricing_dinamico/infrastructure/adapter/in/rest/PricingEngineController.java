@@ -15,12 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/products")
 @CrossOrigin(origins = "http://localhost:8443")
 public class PricingEngineController {
-
-    private final CalculateFinalPriceUseCase calculateFinalPriceUseCase;
     private final PricingEngineService pricingEngineService;
 
-    public PricingEngineController(CalculateFinalPriceUseCase calculateFinalPriceUseCase, PricingEngineService pricingEngineService) {
-        this.calculateFinalPriceUseCase = calculateFinalPriceUseCase;
+    public PricingEngineController( PricingEngineService pricingEngineService) {
         this.pricingEngineService = pricingEngineService;
     }
 

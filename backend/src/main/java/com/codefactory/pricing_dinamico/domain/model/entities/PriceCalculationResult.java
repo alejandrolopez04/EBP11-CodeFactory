@@ -52,8 +52,6 @@ public class PriceCalculationResult {
     public boolean isClampedToMax() { return clampedToMax; }
     public boolean isClampedToMin() { return clampedToMin; }
     public List<Integer> getAppliedRuleIds() { return appliedRuleIds; }
-    public List<AppliedRuleStep> getSteps() { return steps; }
-    public Map<String, String> getEvaluatedVariables() { return evaluatedVariables; }
     public String getSummary() { return summary; }
     public TriggerType getTriggerType() { return triggerType; }
     public void setTriggerType(TriggerType triggerType) { this.triggerType = triggerType; }

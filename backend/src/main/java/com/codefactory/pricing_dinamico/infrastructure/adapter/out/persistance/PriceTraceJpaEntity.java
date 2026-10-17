@@ -61,9 +61,7 @@ public class PriceTraceJpaEntity {
 
     public Long getId() { return id; }
     public Long getProductId() { return productId; }
-    public BigDecimal getBasePrice() { return basePrice; }
     public BigDecimal getPreviousPrice() { return previousPrice; }
-    public BigDecimal getCalculatedPrice() { return calculatedPrice; }
     public BigDecimal getFinalPrice() { return finalPrice; }
     public boolean isClampedToMax() { return clampedToMax; }
     public boolean isClampedToMin() { return clampedToMin; }

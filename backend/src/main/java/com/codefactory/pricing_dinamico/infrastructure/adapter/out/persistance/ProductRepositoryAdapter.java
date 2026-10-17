@@ -55,14 +55,15 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
 
     private ProductJpaEntity toEntity(Product product){
         return new ProductJpaEntity(product.getId(),
-                product.getSku(), product.getName(), product.getProductStatus(), product.getBasePrice(), product.getMaxPrice(), product.getMinPrice(), product.getCategory()
+                product.getSku(), product.getName(), product.getProductStatus(), product.getBasePrice(), product.getMaxPrice(),
+                product.getMinPrice(), product.getCategory(), product.getProductDemand(), product.getProductAvailability()
         );
     };
 
     private Product toDomain(ProductJpaEntity entity){
         return new Product(entity.getId(),
                         entity.getSku(), entity.getName(), entity.getProductStatus(), entity.getBasePrice(), entity.getMaxPrice(),
-                        entity.getMinPrice(), entity.getCategory()
+                        entity.getMinPrice(), entity.getCategory(), entity.getProductDemand(), entity.getProductAvailability()
                 );
     }
 }

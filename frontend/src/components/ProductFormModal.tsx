@@ -15,8 +15,8 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
     sku: "",
     name: "",
     category: "",
-    stock: "",
-    demanda: "",
+    productAvailability: "",
+    productDemand: "",
     base: "",
     min: "",
     max: "",
@@ -29,18 +29,18 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
   const handleSubmit = async () => {
     setError(null);
 
-    if (!form.sku || !form.name || !form.category || !form.stock || !form.demanda || !form.base || !form.min || !form.max) {
+    if (!form.sku || !form.name || !form.category || !form.productAvailability || !form.productDemand || !form.base || !form.min || !form.max) {
       setError("Todos los campos son obligatorios.");
       return;
     }
 
-    const stockNum = parseFloat(form.stock);
-    const demandaNum = parseFloat(form.demanda);
-    if (isNaN(stockNum) || stockNum < 0 || stockNum > 100) {
+    const productAvailabilityNum = parseFloat(form.productAvailability);
+    const productDemandNum = parseFloat(form.productDemand);
+    if (isNaN(productAvailabilityNum) || productAvailabilityNum < 0 || productAvailabilityNum > 100) {
       setError("El Stock debe estar entre 0 y 100.");
       return;
     }
-    if (isNaN(demandaNum) || demandaNum < 0 || demandaNum > 100) {
+    if (isNaN(productDemandNum) || productDemandNum < 0 || productDemandNum > 100) {
       setError("La Demanda debe estar entre 0 y 100.");
       return;
     }
@@ -76,8 +76,8 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
           sku: form.sku,
           name: form.name,
           category: form.category,
-          stock: stockNum,
-          demanda: demandaNum,
+          productAvailability: form.productAvailability,
+          productDemand: form.productDemand,
           basePrice: Number(form.base),
           minPrice: Number(form.min),
           maxPrice: Number(form.max),
@@ -165,8 +165,8 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
                   type="number"
                   min="0"
                   max="100"
-                  value={form.stock}
-                  onChange={(e) => update("stock", e.target.value)}
+                  value={form.productAvailability}
+                  onChange={(e) => update("productAvailability", e.target.value)}
                   placeholder="0 - 100"
                   className="w-full pl-3 pr-8 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] focus:border-transparent placeholder-[#9ca3af] text-[#0f1117]"
                 />
@@ -180,8 +180,8 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
                   type="number"
                   min="0"
                   max="100"
-                  value={form.demanda}
-                  onChange={(e) => update("demanda", e.target.value)}
+                  value={form.productDemand}
+                  onChange={(e) => update("productDemand", e.target.value)}
                   placeholder="0 - 100"
                   className="w-full pl-3 pr-8 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] focus:border-transparent placeholder-[#9ca3af] text-[#0f1117]"
                 />

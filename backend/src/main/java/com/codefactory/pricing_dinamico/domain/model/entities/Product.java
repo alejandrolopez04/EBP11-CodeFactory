@@ -9,9 +9,12 @@ public class Product {
     private final BigDecimal basePrice;
     private final BigDecimal minPrice;
     private final BigDecimal maxPrice;
+    private final Long productDemand;
+    private final Long productAvailability;
     private ProductStatus productStatus;
 
-    public Product(Long id, String sku, String name, ProductStatus productStatus, BigDecimal basePrice, BigDecimal maxPrice, BigDecimal minPrice, String category) {
+    public Product(Long id, String sku, String name, ProductStatus productStatus, BigDecimal basePrice, BigDecimal maxPrice,
+                   BigDecimal minPrice, String category, Long productDemand, Long productAvailability) {
         this.id = id;
         this.productStatus = productStatus;
         this.basePrice = basePrice;
@@ -20,6 +23,16 @@ public class Product {
         this.sku = sku;
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
+        this.productDemand = productDemand;
+        this.productAvailability = productAvailability;
+    }
+
+    public Long getProductDemand() {
+        return productDemand;
+    }
+
+    public Long getProductAvailability() {
+        return productAvailability;
     }
 
     public Long getId() {return this.id;}

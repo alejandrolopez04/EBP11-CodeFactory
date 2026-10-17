@@ -10,6 +10,8 @@ import com.codefactory.pricing_dinamico.domain.model.entities.EffectType;
 import com.codefactory.pricing_dinamico.domain.model.entities.PricingRule;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
 import com.codefactory.pricing_dinamico.domain.model.entities.RuleStatus;
+import com.codefactory.pricing_dinamico.domain.model.events.PricingInputsChangedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,10 +29,13 @@ import java.util.TreeSet;
 public class RuleService implements CreateRuleUseCase, GetRulesUseCase, PrioritizeRulesUseCase {
     private final RuleRepositoryPort ruleRepositoryPort;
     private final ProductRepositoryPort productRepositoryPort;
+    private final ApplicationEventPublisher events;
 
-    public RuleService(RuleRepositoryPort ruleRepositoryPort, ProductRepositoryPort productRepositoryPort) {
+    public RuleService(RuleRepositoryPort ruleRepositoryPort, ProductRepositoryPort productRepositoryPort,
+                       ApplicationEventPublisher events) {
         this.ruleRepositoryPort = ruleRepositoryPort;
         this.productRepositoryPort = productRepositoryPort;
+        this.events = events;
     }
 
     @Override
@@ -43,7 +48,10 @@ public class RuleService implements CreateRuleUseCase, GetRulesUseCase, Prioriti
         validateEffectAgainstProductRange(pricingRule);
         pricingRule.setRuleStatus(RuleStatus.ACTIVE);
         pricingRule.setPriority(nextPriority());
-        return ruleRepositoryPort.save(pricingRule);
+        PricingRule saved = ruleRepositoryPort.save(pricingRule);
+
+        events.publishEvent(PricingInputsChangedEvent.forRule(saved, "Regla " + saved.getId() + " creada"));
+        return saved;
     }
 
     @Override
@@ -121,7 +129,8 @@ public class RuleService implements CreateRuleUseCase, GetRulesUseCase, Prioriti
         List<PricingRule> toSave = requested.keySet().stream().map(rulesById::get).toList();
         toSave.forEach(rule -> rule.setPriority(requested.get(rule.getId())));
         ruleRepositoryPort.saveAll(toSave);
-
+        events.publishEvent(PricingInputsChangedEvent.forProducts(affectedProducts,
+                "Prioridades de reglas actualizadas"));
         return getRules(productId);
     }
 

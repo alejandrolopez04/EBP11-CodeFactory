@@ -8,6 +8,8 @@ import com.codefactory.pricing_dinamico.application.port.out.ProductRepositoryPo
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductNotFoundException;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
+import com.codefactory.pricing_dinamico.domain.model.events.PricingInputsChangedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,9 +19,11 @@ import java.util.List;
 @Service
 public class ProductService implements CreateProductUseCase, GetAllProductsUseCase, ChangeProductStatusUseCase, UpdateProductUseCase {
     private final ProductRepositoryPort productRepositoryPort;
+    private final ApplicationEventPublisher events;
 
-    public ProductService(ProductRepositoryPort productRepositoryPort) {
+    public ProductService(ProductRepositoryPort productRepositoryPort, ApplicationEventPublisher events) {
         this.productRepositoryPort = productRepositoryPort;
+        this.events = events;
     }
 
     @Override
@@ -29,7 +33,9 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
             throw new IllegalArgumentException("El SKU ya se encuentra registrado.");
         }
         product.setProductStatus(ProductStatus.ACTIVE);
-        return productRepositoryPort.save(product);
+        Product saved = productRepositoryPort.save(product);
+        events.publishEvent(PricingInputsChangedEvent.forProduct(saved.getId(), "Producto registrado"));
+        return saved;
     }
 
     @Override
@@ -45,9 +51,11 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
 
         Product updated = new Product(id, changes.getSku(), changes.getName(),
                 existing.getProductStatus(), changes.getBasePrice(),
-                changes.getMaxPrice(), changes.getMinPrice(), changes.getCategory(), changes.getProductAvailability(), changes.getProductDemand());
+                changes.getMaxPrice(), changes.getMinPrice(), changes.getCategory(), existing.getCurrentPrice(), existing.getPriceUpdatedAt(), changes.getProductDemand(), changes.getProductAvailability());
 
-        return productRepositoryPort.save(updated);
+        Product saved = productRepositoryPort.save(updated);
+        events.publishEvent(PricingInputsChangedEvent.forProduct(id, "Producto actualizado"));
+        return saved;
     }
 
     private void validateFields(Product product) {
@@ -98,6 +106,9 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
         Product product = productRepositoryPort.getProductById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
         product.setProductStatus(newStatus);
-        return productRepositoryPort.save(product);
+        Product saved = productRepositoryPort.save(product);
+        events.publishEvent(PricingInputsChangedEvent.forProduct(id,
+                newStatus == ProductStatus.ACTIVE ? "Producto reactivado" : "Producto desactivado"));
+        return saved;
     }
 }

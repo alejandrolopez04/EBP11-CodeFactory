@@ -1,5 +1,6 @@
 package com.codefactory.pricing_dinamico.domain.model.entities;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class Product {
     private final Long id;
@@ -9,12 +10,14 @@ public class Product {
     private final BigDecimal basePrice;
     private final BigDecimal minPrice;
     private final BigDecimal maxPrice;
+    private final BigDecimal currentPrice;
+    private final LocalDateTime priceUpdatedAt;
     private final Long productDemand;
     private final Long productAvailability;
     private ProductStatus productStatus;
 
     public Product(Long id, String sku, String name, ProductStatus productStatus, BigDecimal basePrice, BigDecimal maxPrice,
-                   BigDecimal minPrice, String category, Long productDemand, Long productAvailability) {
+                   BigDecimal minPrice, String category, BigDecimal currentPrice, LocalDateTime priceUpdatedAt, Long productDemand, Long productAvailability) {
         this.id = id;
         this.productStatus = productStatus;
         this.basePrice = basePrice;
@@ -23,8 +26,18 @@ public class Product {
         this.sku = sku;
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
+        this.currentPrice = currentPrice;
+        this.priceUpdatedAt = priceUpdatedAt;
         this.productDemand = productDemand;
         this.productAvailability = productAvailability;
+    }
+
+    public BigDecimal getCurrentPrice() {
+        return currentPrice;
+    }
+
+    public LocalDateTime getPriceUpdatedAt() {
+        return priceUpdatedAt;
     }
 
     public Long getProductDemand() {

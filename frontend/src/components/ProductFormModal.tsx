@@ -60,6 +60,16 @@ export default function ProductFormModal({ onClose, onProductCreated, product, o
       return;
     }
 
+    if (parseFloat(form.base) < parseFloat(form.min)) {
+      setError("El precio base debe estar entre el precio mínimo y máximo.")
+      return;
+    }
+
+    if (parseFloat(form.base) > parseFloat(form.max)) {
+      setError("El precio base debe estar entre el precio mínimo y máximo.")
+      return;
+    }
+
     if (parseFloat(form.min) <= 0) {
       setError("El precio mínimo debe ser mayor a cero.")
       return;

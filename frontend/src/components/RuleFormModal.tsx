@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
+import { API_URL } from "../api/client";
 
-const RULES_API_URL = "http://localhost:8080/api/pricing_rules";
-const PRODUCTS_API_URL = "http://localhost:8080/api/products";
+const RULES_API_URL = `${API_URL}/api/pricing_rules`;
+const PRODUCTS_API_URL = `${API_URL}/api/products`;
 
 const VARIABLE_CONFIG = {
   DEMANDA: {

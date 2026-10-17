@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { API_URL } from "../api/client";
 
-const API_URL = "http://localhost:8080/api/dashboard";
+const DASHBOARD_API_URL = `${API_URL}/api/dashboard`;
 const REFRESH_MS = 15000;
 
 interface RecentUpdate {
@@ -37,7 +38,7 @@ export default function DashboardScreen() {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetch(API_URL);
+                const res = await fetch(DASHBOARD_API_URL);
                 if (!res.ok) throw new Error();
                 setData(await res.json());
                 setError(null);

@@ -1,8 +1,8 @@
 import { useState } from "react";
+import {API_URL} from "../api/client";
+fetch(`${API_URL}/api/products`);
 
 const CATEGORIES = ["Suscripciones", "Envíos", "Entradas", "Almacenamiento", "Soporte"];
-
-const API_URL = "http://localhost:8080/api/products";
 
 export interface ApiProduct {
   id: number; sku: string; name: string; category: string;

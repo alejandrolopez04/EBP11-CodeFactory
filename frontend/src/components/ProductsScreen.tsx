@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import ProductFormModal, { type ApiProduct } from "./ProductFormModal";
 import Toast from "./Toast"
+import { API_URL } from "../api/client";
 
-const API_URL = "http://localhost:8080/api/products";
+
+const PRODUCTS_API_URL = `${API_URL}/api/products`;
 
 function fmt(n: number) {
   return "$" + n.toLocaleString("es-CL");
@@ -27,7 +29,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
 
   const loadProducts = useCallback(async () => {
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(PRODUCTS_API_URL);
       if (!res.ok) throw new Error();
       setProducts(await res.json());
       setLoadError(null);

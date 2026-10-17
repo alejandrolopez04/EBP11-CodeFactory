@@ -53,6 +53,11 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
         return productJpaRepository.existsBySku(sku);
     }
 
+    @Override
+    public boolean existsBySkuAndIdNot(String sku, Long id) {
+        return productJpaRepository.existsBySkuAndIdNot(sku, id);
+    }
+
     private ProductJpaEntity toEntity(Product product){
         return new ProductJpaEntity(product.getId(),
                 product.getSku(), product.getName(), product.getProductStatus(), product.getBasePrice(), product.getMaxPrice(),

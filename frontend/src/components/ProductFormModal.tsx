@@ -4,23 +4,33 @@ const CATEGORIES = ["Suscripciones", "Envíos", "Entradas", "Almacenamiento", "S
 
 const API_URL = "http://localhost:8080/api/products";
 
+export interface ApiProduct {
+  id: number; sku: string; name: string; category: string;
+  basePrice: number; minPrice: number; maxPrice: number; productAvailability:
+  number; productDemand: number; productStatus: "ACTIVE" | "INACTIVE";
+}
+
 interface ProductFormModalProps {
   onClose: () => void;
   onProductCreated?: () => void;
+  product?: ApiProduct;            // modo edición
+  onProductUpdated?: () => void;
 }
 
 
-export default function ProductFormModal({ onClose, onProductCreated }: ProductFormModalProps) {
+export default function ProductFormModal({ onClose, onProductCreated, product, onProductUpdated }: ProductFormModalProps) {
+  const isEdit = !!product;
   const [form, setForm] = useState({
-    sku: "",
-    name: "",
-    category: "",
-    productAvailability: "",
-    productDemand: "",
-    base: "",
-    min: "",
-    max: "",
+    sku: product?.sku ?? "",
+    name: product?.name ?? "",
+    category: product?.category ?? "",
+    productAvailability: product ? String(product.productAvailability): "",
+    productDemand: product ? String(product.productDemand) : "",
+    base: product ? String(product.basePrice) : "",
+    min: product ? String(product.minPrice) : "",
+    max: product ? String(product.maxPrice) : "",
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,7 +71,7 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
     }
 
     if (parseFloat(form.min) >= parseFloat(form.max)) {
-      setError("El precio mínimo debe ser menor que el precio máximo.")
+      setError("El precio mínimo debe ser estrictamente menor al precio máximo.")
       return;
     }
 
@@ -69,15 +79,15 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
 
     setLoading(true);
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
+      const response = await fetch(isEdit ? `${API_URL}/${product!.id}`:API_URL, {
+        method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sku: form.sku,
           name: form.name,
           category: form.category,
-          productAvailability: form.productAvailability,
-          productDemand: form.productDemand,
+          productAvailability: productAvailabilityNum,
+          productDemand: productDemandNum,
           basePrice: Number(form.base),
           minPrice: Number(form.min),
           maxPrice: Number(form.max),
@@ -86,11 +96,14 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        const message = data?.message || "No se pudo registrar el producto. Verifica los datos.";
+        const message = data?.message || (isEdit
+            ? "No se pudo actualizar el producto. Verifica los datos."
+            : "No se pudo registrar el producto. Verifica los datos.");
         setError(message);
         return;
       }
-      onProductCreated?.();
+      if (isEdit) onProductUpdated?.();
+      else onProductCreated?.();
       onClose();
     } catch (err) {
       setError("No se pudo conectar con el servidor. Verifica que el backend esté corriendo.");
@@ -104,7 +117,7 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
       <div className="bg-white rounded-[10px] border border-[#e2e6ed] w-full max-w-lg shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e2e6ed]">
-          <h2 className="text-[16px] font-bold text-[#0f1117] font-display">Registrar producto</h2>
+          <h2 className="text-[16px] font-bold text-[#0f1117] font-display">{isEdit ? "Editar producto" : "Registrar producto"}</h2>
           <button onClick={onClose} className="text-[#9ca3af] hover:text-[#374151] transition-colors">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M2 2l12 12M14 2L2 14" />
@@ -147,12 +160,15 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
           <div>
             <label className="block text-[12px] font-semibold text-[#374151] mb-1">Categoría</label>
             <select
-              value={form.category}
-              onChange={(e) => update("category", e.target.value)}
-              className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#374151]"
+                value={form.category}
+                onChange={(e) => update("category", e.target.value)}
+                className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#374151]"
             >
               <option value="">Seleccionar categoría…</option>
               {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              {product && !CATEGORIES.includes(product.category) && (
+                  <option>{product.category}</option>
+              )}
             </select>
           </div>
 
@@ -240,7 +256,7 @@ export default function ProductFormModal({ onClose, onProductCreated }: ProductF
               onClick={handleSubmit}
               disabled={loading}
               className="px-4 py-2 text-[13px] font-semibold bg-[#1a56db] text-white rounded-[6px] hover:bg-[#1648c0] transition-colors">
-            {loading ? "Guardando..." : "Guardar"}
+            {loading ? "Guardando..." : isEdit ? "Guardar cambios" : "Guardar"}
           </button>
         </div>
       </div>

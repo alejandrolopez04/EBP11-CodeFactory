@@ -13,4 +13,6 @@ public interface ProductJpaRepository extends JpaRepository<ProductJpaEntity, Lo
     List<ProductJpaEntity> findByCategory(String category);
 
     List<ProductJpaEntity> findByProductStatusAndCategory(ProductStatus productStatus, String category);
+
+    boolean existsBySkuAndIdNot(String sku, Long id);
 }

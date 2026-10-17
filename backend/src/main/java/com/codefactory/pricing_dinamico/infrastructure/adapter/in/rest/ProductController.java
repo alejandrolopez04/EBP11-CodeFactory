@@ -3,6 +3,7 @@ package com.codefactory.pricing_dinamico.infrastructure.adapter.in.rest;
 import com.codefactory.pricing_dinamico.application.port.in.ChangeProductStatusUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.CreateProductUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.GetAllProductsUseCase;
+import com.codefactory.pricing_dinamico.application.port.in.UpdateProductUseCase;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
 import org.springframework.http.HttpStatus;
@@ -17,13 +18,15 @@ public class ProductController {
     private final CreateProductUseCase createProductUseCase;
     private final GetAllProductsUseCase getAllProductsUseCase;
     private final ChangeProductStatusUseCase changeProductStatusUseCase;
+    private final UpdateProductUseCase updateProductUseCase;
 
     ProductController(CreateProductUseCase createProductUseCase,
                       GetAllProductsUseCase getAllProductsUseCase,
-                      ChangeProductStatusUseCase changeProductStatusUseCase){
+                      ChangeProductStatusUseCase changeProductStatusUseCase, UpdateProductUseCase updateProductUseCase){
         this.createProductUseCase = createProductUseCase;
         this.getAllProductsUseCase = getAllProductsUseCase;
         this.changeProductStatusUseCase = changeProductStatusUseCase;
+        this.updateProductUseCase = updateProductUseCase;
     }
 
     @PostMapping
@@ -32,6 +35,10 @@ public class ProductController {
         return createProductUseCase.createProduct(product);
     }
 
+    @PutMapping("/{id}")
+    public Product updateProduct(@PathVariable Long id, @RequestBody Product product) {
+        return updateProductUseCase.updateProduct(id, product);
+    }
     
     @GetMapping
     public List<Product> getProducts(@RequestParam(required = false) ProductStatus status,

@@ -1,269 +1,236 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RuleFormModal from "./RuleFormModal";
-import ProductFormModal from "@/components/ProductFormModal.tsx";
 import Toast from "@/components/Toast.tsx";
+import {
+  activatePricingRule,
+  deactivatePricingRule,
+  fetchPricingRules,
+  type ApiPricingRule,
+} from "../api/client";
 
-interface Rule {
-  id: string;
-  name: string;
-  condition: string;
-  effect: string;
-  validFrom: string;
-  validTo: string;
-  products: string[];
-  status: boolean;
+const VARIABLE_LABELS: Record<string, string> = {
+  DEMANDA: "Demanda",
+  DISPONIBILIDAD: "Disponibilidad",
+  TEMPORAL: "Horario",
+};
+
+const LEVEL_LABELS: Record<string, string> = {
+  CRITICO: "Crítico",
+  BAJO: "Bajo",
+  NORMAL: "Normal",
+  ALTO: "Alto",
+};
+
+const TIME_LABELS: Record<string, string> = {
+  HORA_PICO: "Hora pico",
+  TEMPORADA_ALTA: "Temporada alta",
+};
+
+function getConditionText(rule: ApiPricingRule): string {
+  const variable = VARIABLE_LABELS[rule.variableType] ?? rule.variableType;
+
+  if (rule.variableType === "TEMPORAL") {
+    return `${variable} = ${TIME_LABELS[rule.timeCondition ?? ""] ?? rule.timeCondition ?? "—"}`;
+  }
+
+  return `${variable} = ${LEVEL_LABELS[rule.level ?? ""] ?? rule.level ?? "—"}`;
 }
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
+function getEffectText(rule: ApiPricingRule): string {
+  return rule.effectType === "PORCENTAJE"
+    ? `+${rule.effectValue}%`
+    : `+$${rule.effectValue}`;
 }
 
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  let hours = d.getHours();
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
-  return `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
+function formatDate(value?: string): string {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  return date.toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
-const MAX_VISIBLE_PRODUCTS = 1;
-const RULES: Rule[] = [
-  {
-    id: "RGL-001",
-    name: "Recargo hora pico",
-    condition: "Horario = Hora pico",
-    effect: "+18%",
-    validFrom: "2026-10-01T08:00",
-    validTo: "2026-12-31T20:00",
-    products: ["Envío Express 24h", "Suscripción Premium", "Suscripción Básica", "Almacenamiento Corp.", "Soporte Prioritario"],
-    status: true,
-  },
-  {
-    id: "RGL-002",
-    name: "Descuento baja demanda",
-    condition: "Demanda < Baja",
-    effect: "−12%",
-    validFrom: "2026-09-15T00:00",
-    validTo: "2026-10-15T23:59",
-    products: ["Entrada General Evento", "Entrada VIP Evento", "Suscripción Básica"],
-    status: true,
-  },
-  {
-    id: "RGL-003",
-    name: "Promoción fin de semana",
-    condition: "Horario = Fin de semana",
-    effect: "−$3.000",
-    validFrom: "2026-10-01T00:00",
-    validTo: "2026-11-30T23:59",
-    products: ["Suscripción Básica Mensual", "Envío Estándar 5 días", "Envío Express 24h", "Soporte Prioritario"],
-    status: true,
-  },
-  {
-    id: "RGL-004",
-    name: "Ajuste alta demanda",
-    condition: "Demanda > Alta",
-    effect: "+22%",
-    validFrom: "2026-10-10T09:00",
-    validTo: "2026-12-15T18:00",
-    products: ["Entrada VIP Evento", "Envío Express 24h"],
-    status: true,
-  },
-  {
-    id: "RGL-005",
-    name: "Stock crítico",
-    condition: "Disponibilidad < 10%",
-    effect: "+30%",
-    validFrom: "2026-11-01T00:00",
-    validTo: "2026-12-31T23:59",
-    products: ["Almacenamiento Corp.", "Soporte Prioritario", "Suscripción Premium", "Envío Express 24h", "Entrada VIP Evento", "Entrada General Evento"],
-    status: false,
-  },
-  {
-    id: "RGL-006",
-    name: "Temporada alta",
-    condition: "Horario = Temporada alta",
-    effect: "+15%",
-    validFrom: "2026-12-01T00:00",
-    validTo: "2027-01-15T23:59",
-    products: ["Entrada VIP Evento"],
-    status: true,
-  },
-  {
-    id: "RGL-007",
-    name: "Incentivo disponibilidad",
-    condition: "Disponibilidad > 80%",
-    effect: "−8%",
-    validFrom: "2026-10-01T00:00",
-    validTo: "2026-10-10T23:59",
-    products: ["Envío Estándar 5 días", "Suscripción Básica", "Almacenamiento Corp."],
-    status: false,
-  },
-];
+function formatTime(value?: string): string {
+  if (!value) return "—";
 
-function DateCell({ iso }: { iso: string }) {
-  return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className="text-[12px] font-medium text-[#0f1117] tabular-nums">{formatDate(iso)}</span>
-      <span className="text-[11px] text-[#6b7280] tabular-nums">{formatTime(iso)}</span>
-    </div>
-  );
+  return new Date(value).toLocaleTimeString("es-CO", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function PricingRulesScreen() {
+  const [rules, setRules] = useState<ApiPricingRule[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [confirmRule, setConfirmRule] = useState<string | null>(null);
-  const [rules, setRules] = useState<Rule[]>(RULES);
+  const [editingRule, setEditingRule] = useState<ApiPricingRule | null>(null);
+  const [confirmRule, setConfirmRule] = useState<ApiPricingRule | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleStatus = (id: string) => {
-    setRules((r) => r.map((rule) => rule.id === id ? { ...rule, status: !rule.status } : rule));
-    setConfirmRule(null);
+  const loadRules = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchPricingRules();
+      setRules(data);
+    } catch {
+      setError("No se pudieron cargar las reglas de pricing.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const ruleToConfirm = rules.find((r) => r.id === confirmRule);
+  useEffect(() => {
+    void loadRules();
+  }, []);
+
+  const handleToggleStatus = async () => {
+    if (!confirmRule) return;
+
+    try {
+      if (confirmRule.ruleStatus === "ACTIVE") {
+        await deactivatePricingRule(confirmRule.id);
+        setToast("Regla desactivada exitosamente.");
+      } else {
+        await activatePricingRule(confirmRule.id);
+        setToast("Regla activada exitosamente.");
+      }
+
+      setConfirmRule(null);
+      await loadRules();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo cambiar el estado de la regla.");
+      setConfirmRule(null);
+    }
+  };
 
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#0f1117] font-display">Reglas de Pricing</h1>
         <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-[#1a56db] text-white text-[13px] font-semibold rounded-[6px] hover:bg-[#1648c0] transition-colors flex items-center gap-2"
+          onClick={() => {
+            setEditingRule(null);
+            setShowModal(true);
+          }}
+          className="px-4 py-2 bg-[#1a56db] text-white text-[13px] font-semibold rounded-[6px] hover:bg-[#1648c0] transition-colors"
         >
-          <span>+</span> Crear regla
+          + Crear regla
         </button>
       </div>
 
-      <div className="bg-white border border-[#e2e6ed] rounded-[8px] overflow-x-auto">
-        <table className="w-full text-[13px] table-fixed min-w-[1100px]">
-          <thead>
-            <tr className="border-b border-[#e2e6ed] bg-[#f8f9fb]">
-              <th className="w-[15%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Nombre / ID</th>
-              <th className="w-[14%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Condición</th>
-              <th className="w-[7%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Efecto</th>
-              <th className="w-[11%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Desde</th>
-              <th className="w-[11%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Hasta</th>
-              <th className="w-[20%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Productos</th>
-              <th className="w-[10%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Estado</th>
-              <th className="w-[12%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rules.map((r, i) => {
-              const visibleProducts = r.products.slice(0, MAX_VISIBLE_PRODUCTS);
-              const hiddenCount = r.products.length - MAX_VISIBLE_PRODUCTS;
+      {error && (
+        <div className="mb-4 px-3 py-2 bg-[#fef2f2] border border-[#fecaca] rounded-[6px] text-[12px] text-[#dc2626]">
+          {error}
+        </div>
+      )}
 
-              return (
-                <tr key={r.id} className={`border-b border-[#f1f3f7] hover:bg-[#f8f9fb] transition-colors ${i === rules.length - 1 ? "border-none" : ""}`}>
-                  <td className="px-3 py-3">
-                    <div className="font-medium text-[#0f1117] truncate" title={r.name}>{r.name}</div>
-                    <div className="font-mono text-[11px] text-[#9ca3af] mt-0.5">{r.id}</div>
+      {loading ? (
+        <div className="bg-white border border-[#e2e6ed] rounded-[8px] p-8 text-center text-[#6b7280]">
+          Cargando reglas...
+        </div>
+      ) : (
+        <div className="bg-white border border-[#e2e6ed] rounded-[8px] overflow-x-auto">
+          <table className="w-full text-[13px] table-fixed min-w-[1000px]">
+            <thead>
+              <tr className="border-b border-[#e2e6ed] bg-[#f8f9fb]">
+                <th className="w-[10%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">ID</th>
+                <th className="w-[18%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Condición</th>
+                <th className="w-[10%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Efecto</th>
+                <th className="w-[12%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Desde</th>
+                <th className="w-[12%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Hasta</th>
+                <th className="w-[10%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Productos</th>
+                <th className="w-[12%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Estado</th>
+                <th className="w-[16%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rules.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-3 py-8 text-center text-[#6b7280]">
+                    No hay reglas de pricing registradas.
                   </td>
+                </tr>
+              )}
 
-                  <td className="px-3 py-3 text-[#374151] truncate" title={r.condition}>{r.condition}</td>
-
-                  <td className="px-3 py-3 text-center">
-                    <span className={`font-semibold font-mono text-[12px] ${r.effect.startsWith("+") ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
-                      {r.effect}
-                    </span>
-                  </td>
-
-                  <td className="px-3 py-3">
-                    <DateCell iso={r.validFrom} />
-                  </td>
-
-                  <td className="px-3 py-3">
-                    <DateCell iso={r.validTo} />
-                  </td>
-
-                  <td className="px-3 py-3">
-                    <div className="flex flex-wrap items-center gap-1">
-                      {visibleProducts.map((p) => (
-                        <span key={p} className="px-2 py-0.5 bg-[#e8ecf2] text-[#374151] text-[11px] rounded-full font-medium whitespace-nowrap">
-                          {p}
-                        </span>
-                      ))}
-                      {hiddenCount > 0 && (
-                        <span
-                          className="px-2 py-0.5 bg-[#f1f3f7] text-[#6b7280] text-[11px] rounded-full font-medium cursor-default"
-                          title={r.products.slice(MAX_VISIBLE_PRODUCTS).join(", ")}
-                        >
-                          +{hiddenCount}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-
+              {rules.map((rule) => (
+                <tr key={rule.id} className="border-b border-[#f1f3f7] hover:bg-[#f8f9fb]">
+                  <td className="px-3 py-3 font-mono text-[12px] text-[#6b7280]">RGL-{String(rule.id).padStart(3, "0")}</td>
+                  <td className="px-3 py-3 text-[#374151]">{getConditionText(rule)}</td>
+                  <td className="px-3 py-3 text-center font-semibold text-[#16a34a]">{getEffectText(rule)}</td>
+                  <td className="px-3 py-3 text-center text-[#374151]">{formatDate(rule.validFrom)}</td>
+                  <td className="px-3 py-3 text-center text-[#374151]">{formatDate(rule.validTo)}</td>
+                  <td className="px-3 py-3 text-center text-[#374151]">{rule.productIds?.length ?? 0}</td>
                   <td className="px-3 py-3 text-center">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                      r.status ? "bg-[#dcfce7] text-[#16a34a]" : "bg-[#f1f3f7] text-[#9ca3af]"
+                      rule.ruleStatus === "ACTIVE"
+                        ? "bg-[#dcfce7] text-[#16a34a]"
+                        : "bg-[#f1f3f7] text-[#9ca3af]"
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${r.status ? "bg-[#16a34a]" : "bg-[#9ca3af]"}`} />
-                      {r.status ? "Activa" : "Inactiva"}
+                      {rule.ruleStatus === "ACTIVE" ? "Activa" : "Inactiva"}
                     </span>
                   </td>
-
                   <td className="px-3 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <button className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver">
-                        <EyeIcon />
-                      </button>
-                      <button className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Editar">
-                        <EditIcon />
-                      </button>
+                    <div className="flex items-center justify-center gap-2">
                       <button
-                        onClick={() => setConfirmRule(r.id)}
-                        className={`px-2 py-1 rounded-[4px] text-[11px] font-semibold transition-colors whitespace-nowrap ${
-                          r.status
+                        onClick={() => {
+                          setEditingRule(rule);
+                          setShowModal(true);
+                        }}
+                        className="px-2 py-1 rounded-[4px] text-[11px] font-semibold text-[#1a56db] hover:bg-[#e8f0fd]"
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        onClick={() => setConfirmRule(rule)}
+                        className={`px-2 py-1 rounded-[4px] text-[11px] font-semibold ${
+                          rule.ruleStatus === "ACTIVE"
                             ? "text-[#dc2626] hover:bg-[#fef2f2]"
                             : "text-[#16a34a] hover:bg-[#dcfce7]"
                         }`}
                       >
-                        {r.status ? "Desactivar" : "Activar"}
+                        {rule.ruleStatus === "ACTIVE" ? "Desactivar" : "Activar"}
                       </button>
                     </div>
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      {/* Confirm modal */}
-      {confirmRule && ruleToConfirm && (
+      {confirmRule && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[10px] border border-[#e2e6ed] w-full max-w-sm shadow-xl p-6">
-            <div className="w-10 h-10 rounded-full bg-[#fef2f2] flex items-center justify-center mb-4">
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#dc2626" strokeWidth="1.5">
-                <path d="M8 3v5M8 11v1" />
-                <circle cx="8" cy="8" r="7" />
-              </svg>
-            </div>
-            <h3 className="text-[15px] font-bold text-[#0f1117] font-display mb-1">
-              ¿Deseas {ruleToConfirm.status ? "desactivar" : "activar"} esta regla?
+            <h3 className="text-[15px] font-bold text-[#0f1117] mb-2">
+              ¿Deseas {confirmRule.ruleStatus === "ACTIVE" ? "desactivar" : "activar"} esta regla?
             </h3>
             <p className="text-[13px] text-[#6b7280] mb-5">
-              {ruleToConfirm.status
-                ? "La regla dejará de aplicarse en el cálculo de precios, pero conservará su configuración."
-                : "La regla comenzará a aplicarse en el próximo cálculo de precios."}
+              {confirmRule.ruleStatus === "ACTIVE"
+                ? "La regla dejará de aplicarse en los próximos cálculos, pero conservará su configuración."
+                : "La regla volverá a evaluarse en los próximos cálculos de precio."}
             </p>
+
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setConfirmRule(null)} className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px] hover:bg-[#f1f3f7] transition-colors">
+              <button
+                onClick={() => setConfirmRule(null)}
+                className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px]"
+              >
                 Cancelar
               </button>
               <button
-                onClick={() => toggleStatus(confirmRule)}
-                className={`px-4 py-2 text-[13px] font-semibold text-white rounded-[6px] transition-colors ${
-                  ruleToConfirm.status ? "bg-[#dc2626] hover:bg-[#b91c1c]" : "bg-[#16a34a] hover:bg-[#15803d]"
+                onClick={handleToggleStatus}
+                className={`px-4 py-2 text-[13px] font-semibold text-white rounded-[6px] ${
+                  confirmRule.ruleStatus === "ACTIVE" ? "bg-[#dc2626]" : "bg-[#16a34a]"
                 }`}
               >
-                {ruleToConfirm.status ? "Desactivar" : "Activar"}
+                {confirmRule.ruleStatus === "ACTIVE" ? "Desactivar" : "Activar"}
               </button>
             </div>
           </div>
@@ -271,29 +238,17 @@ export default function PricingRulesScreen() {
       )}
 
       {showModal && (
-          <RuleFormModal
-              onClose={() => setShowModal(false)}
-              onRuleCreated={() => setToast("Regla registrada exitosamente.")}
-          />
+        <RuleFormModal
+          editingRule={editingRule}
+          onClose={() => setShowModal(false)}
+          onSaved={async (message) => {
+            setToast(message);
+            await loadRules();
+          }}
+        />
       )}
+
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" />
-      <circle cx="8" cy="8" r="2" />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <path d="M11 2l3 3-8 8H3v-3l8-8z" />
-    </svg>
   );
 }

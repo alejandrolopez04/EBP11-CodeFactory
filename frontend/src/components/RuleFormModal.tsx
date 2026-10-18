@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { API_URL } from "../api/client";
+import { useEffect, useMemo, useState } from "react";
+import { API_URL, updatePricingRule, type ApiPricingRule } from "../api/client";
 
 const RULES_API_URL = `${API_URL}/api/pricing_rules`;
 const PRODUCTS_API_URL = `${API_URL}/api/products`;
@@ -42,202 +42,136 @@ interface ApiProduct {
 }
 
 interface RuleFormModalProps {
+  editingRule?: ApiPricingRule | null;
   onClose: () => void;
-  onRuleCreated?: () => void;
+  onSaved?: (message: string) => void | Promise<void>;
 }
 
-// Helpers para el DateTimeField
-const pad = (n: number) => String(n).padStart(2, "0");
+const pad = (value: number) => String(value).padStart(2, "0");
 
-function toIso(d: Date) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function toLocalInput(value?: string): string {
+  if (!value) return "";
+  return value.slice(0, 16);
 }
 
-// Componente reutilizable: fecha (calendario) + hora (12H con AM/PM)
-function DateTimeField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const d = value ? new Date(value) : new Date();
-  const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const hour24 = d.getHours();
-  const ampm = hour24 >= 12 ? "PM" : "AM";
-  const hour12 = hour24 % 12 || 12;
-  const minute = d.getMinutes();
+export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFormModalProps) {
+  const isEditing = Boolean(editingRule);
 
-  const build = (h24: number, min: number, newDateStr: string = dateStr) =>
-    onChange(`${newDateStr}T${pad(h24)}:${pad(min)}`);
-
-  const handleDate = (newDateStr: string) => build(hour24, minute, newDateStr);
-
-  const handleHour = (val: number) => {
-    const clamped = Math.max(1, Math.min(12, val || 1));
-    let h24 = clamped % 12;
-    if (ampm === "PM") h24 += 12;
-    build(h24, minute);
-  };
-
-  const handleMinute = (val: number) => {
-    const clamped = Math.max(0, Math.min(59, val || 0));
-    build(hour24, clamped);
-  };
-
-  const toggleAmPm = () => {
-    const newAmpm = ampm === "AM" ? "PM" : "AM";
-    let h24 = hour12 % 12;
-    if (newAmpm === "PM") h24 += 12;
-    build(h24, minute);
-  };
-
-  return (
-    <div>
-      <label className="block text-[11px] font-semibold text-[#374151] mb-1">{label}</label>
-      {/* Fecha */}
-      <input
-        type="date"
-        value={dateStr}
-        onChange={(e) => handleDate(e.target.value)}
-        className="w-full px-2 py-2 text-[12px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#0f1117]"
-      />
-      {/* Hora */}
-      <div className="flex items-center gap-1 mt-1.5">
-        <input
-          type="number"
-          min={1}
-          max={12}
-          value={hour12}
-          onChange={(e) => handleHour(Number(e.target.value))}
-          className="flex-1 min-w-0 px-1 py-2 text-[12px] text-center border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#0f1117] tabular-nums"
-        />
-        <span className="text-[#6b7280] text-[12px]">:</span>
-        <input
-          type="number"
-          min={0}
-          max={59}
-          value={pad(minute)}
-          onChange={(e) => handleMinute(Number(e.target.value))}
-          className="flex-1 min-w-0 px-1 py-2 text-[12px] text-center border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#0f1117] tabular-nums"
-        />
-        <button
-          type="button"
-          onClick={toggleAmPm}
-          className="px-2 py-2 text-[11px] font-semibold bg-[#f1f3f7] border border-[#e2e6ed] rounded-[6px] hover:bg-[#e8ecf2] text-[#374151] transition-colors shrink-0"
-        >
-          {ampm}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-export default function RuleFormModal({ onClose, onRuleCreated }: RuleFormModalProps) {
   const [variableType, setVariableType] = useState<VariableKey>("DEMANDA");
-  const [conditionValue, setConditionValue] = useState(VARIABLE_CONFIG.DEMANDA.options[0].value);
-
+  const [conditionValue, setConditionValue] = useState("BAJO");
   const [effectType, setEffectType] = useState<"PORCENTAJE" | "VALOR">("PORCENTAJE");
   const [effectValue, setEffectValue] = useState("15");
-
-  // vigencia (Desde / Hasta)
-  const [validFrom, setValidFrom] = useState(() => toIso(new Date()));
-  const [validTo, setValidTo] = useState(() => {
-    const in30Days = new Date();
-    in30Days.setDate(in30Days.getDate() + 30);
-    return toIso(in30Days);
-  });
 
   const [allProducts, setAllProducts] = useState<ApiProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<ApiProduct[]>([]);
   const [search, setSearch] = useState("");
+
+  const [validFrom, setValidFrom] = useState("");
+  const [validTo, setValidTo] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(PRODUCTS_API_URL)
-        .then((res) => res.json())
-        .then((data: ApiProduct[]) => setAllProducts(data))
-        .catch(() => setError("No se pudieron cargar los productos disponibles."));
+      .then((response) => response.json())
+      .then((data: ApiProduct[]) => setAllProducts(data))
+      .catch(() => setError("No se pudieron cargar los productos."));
   }, []);
 
-  const handleVariableChange = (v: VariableKey) => {
-    setVariableType(v);
-    setConditionValue(VARIABLE_CONFIG[v].options[0].value);
-  };
+  useEffect(() => {
+    if (!editingRule) return;
+
+    setVariableType(editingRule.variableType);
+    setConditionValue(
+      editingRule.variableType === "TEMPORAL"
+        ? editingRule.timeCondition ?? "HORA_PICO"
+        : editingRule.level ?? "NORMAL"
+    );
+    setEffectType(editingRule.effectType);
+    setEffectValue(String(editingRule.effectValue));
+    setValidFrom(toLocalInput(editingRule.validFrom));
+    setValidTo(toLocalInput(editingRule.validTo));
+  }, [editingRule]);
+
+  const currentConfig = VARIABLE_CONFIG[variableType];
 
   const suggestions = useMemo(() => {
     if (!search.trim()) return [];
-    const selectedIds = new Set(selectedProducts.map((p) => p.id));
+
+    const selectedIds = new Set(selectedProducts.map((product) => product.id));
+
     return allProducts
-        .filter((p) => !selectedIds.has(p.id))
-        .filter(
-            (p) =>
-                p.name.toLowerCase().includes(search.toLowerCase()) ||
-                p.sku.toLowerCase().includes(search.toLowerCase())
-        )
-        .slice(0, 6);
+      .filter((product) => !selectedIds.has(product.id))
+      .filter(
+        (product) =>
+          product.name.toLowerCase().includes(search.toLowerCase()) ||
+          product.sku.toLowerCase().includes(search.toLowerCase())
+      )
+      .slice(0, 6);
   }, [search, allProducts, selectedProducts]);
-
-  const addProduct = (p: ApiProduct) => {
-    setSelectedProducts((prev) => [...prev, p]);
-    setSearch("");
-  };
-
-  const removeProduct = (id: number) => {
-    setSelectedProducts((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  const currentConfig = VARIABLE_CONFIG[variableType];
 
   const handleSubmit = async () => {
     setError(null);
 
-    if (!effectValue || Number(effectValue) == 0) {
-      setError("El valor del efecto debe ser distinto de cero.");
+    if (!effectValue || Number(effectValue) < 0) {
+      setError("El valor del efecto debe ser mayor o igual a 0.");
       return;
     }
-    if (selectedProducts.length === 0) {
-      setError("Selecciona al menos un producto para asociar a la regla.");
-      return;
-    }
-    // Validar vigencia
-    if (new Date(validFrom) >= new Date(validTo)) {
-      setError("La fecha 'Desde' debe ser anterior a la fecha 'Hasta'.");
-      return;
-    }
-
-    const payload: Record<string, unknown> = {
-      variableType,
-      effectType,
-      effectValue: Number(effectValue),
-      productIds: selectedProducts.map((p) => p.id),
-      validFrom, // ISO "YYYY-MM-DDTHH:mm"
-      validTo,   // ISO "YYYY-MM-DDTHH:mm"
-    };
-    payload[currentConfig.field] = conditionValue;
 
     setLoading(true);
-    try {
-      const response = await fetch(RULES_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        setError(data?.message || "No se pudo registrar la regla. Verifica los datos.");
-        return;
+    try {
+      if (isEditing && editingRule) {
+        await updatePricingRule(editingRule.id, {
+          variableType,
+          level: variableType === "TEMPORAL" ? undefined : conditionValue as ApiPricingRule["level"],
+          timeCondition: variableType === "TEMPORAL" ? conditionValue as ApiPricingRule["timeCondition"] : undefined,
+          effectType,
+          effectValue: Number(effectValue),
+        });
+
+        await onSaved?.("Regla actualizada exitosamente.");
+      } else {
+        if (selectedProducts.length === 0) {
+          setError("Selecciona al menos un producto.");
+          return;
+        }
+
+        if (!validFrom || !validTo || new Date(validFrom) >= new Date(validTo)) {
+          setError("La fecha Desde debe ser anterior a la fecha Hasta.");
+          return;
+        }
+
+        const payload: Record<string, unknown> = {
+          variableType,
+          effectType,
+          effectValue: Number(effectValue),
+          productIds: selectedProducts.map((product) => product.id),
+          validFrom,
+          validTo,
+        };
+
+        payload[currentConfig.field] = conditionValue;
+
+        const response = await fetch(RULES_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => null);
+          setError(data?.message || "No se pudo crear la regla.");
+          return;
+        }
+
+        await onSaved?.("Regla creada exitosamente.");
       }
 
-      onRuleCreated?.();
       onClose();
-    } catch {
-      setError("No se pudo conectar con el servidor. Verifica que el backend esté corriendo.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo conectar con el servidor.");
     } finally {
       setLoading(false);
     }
@@ -247,136 +181,176 @@ export default function RuleFormModal({ onClose, onRuleCreated }: RuleFormModalP
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-[10px] border border-[#e2e6ed] w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#e2e6ed]">
-          <h2 className="text-[16px] font-bold text-[#0f1117] font-display">Crear regla de ajuste</h2>
+          <h2 className="text-[16px] font-bold text-[#0f1117]">
+            {isEditing ? "Editar regla de ajuste" : "Crear regla de ajuste"}
+          </h2>
         </div>
 
         {error && (
-            <div className="mx-6 mt-4 px-3 py-2 bg-[#fef2f2] border border-[#fecaca] rounded-[6px] text-[12px] text-[#dc2626]">
-              {error}
-            </div>
+          <div className="mx-6 mt-4 px-3 py-2 bg-[#fef2f2] border border-[#fecaca] rounded-[6px] text-[12px] text-[#dc2626]">
+            {error}
+          </div>
         )}
+
         <div className="px-6 py-5 space-y-6">
-          {/* Condición */}
           <section>
-            <h3 className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider mb-3">Condición</h3>
-            <div className="grid grid-cols-3 gap-3">
+            <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Condición</h3>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-[#374151] mb-1">Variable</label>
                 <select
-                    value={variableType}
-                    onChange={(e) => handleVariableChange(e.target.value as VariableKey)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#374151]"
+                  value={variableType}
+                  onChange={(event) => {
+                    const value = event.target.value as VariableKey;
+                    setVariableType(value);
+                    setConditionValue(VARIABLE_CONFIG[value].options[0].value);
+                  }}
+                  className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
                 >
-                  {Object.entries(VARIABLE_CONFIG).map(([key, cfg]) => (
-                      <option key={key} value={key}>{cfg.label}</option>
+                  {Object.entries(VARIABLE_CONFIG).map(([key, config]) => (
+                    <option key={key} value={key}>{config.label}</option>
                   ))}
                 </select>
               </div>
+
               <div>
-                <label className="block text-[11px] font-semibold text-[#374151] mb-1">
-                  Es igual a
-                </label>
+                <label className="block text-[11px] font-semibold text-[#374151] mb-1">Valor</label>
                 <select
-                    value={conditionValue}
-                    onChange={(e) => setConditionValue(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#374151]"
+                  value={conditionValue}
+                  onChange={(event) => setConditionValue(event.target.value)}
+                  className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
                 >
-                  {currentConfig.options.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  {currentConfig.options.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
               </div>
             </div>
           </section>
 
-          {/* Efecto */}
           <section>
-            <h3 className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider mb-3">Efecto</h3>
+            <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Efecto</h3>
+
             <div className="flex gap-3">
               <div className="w-40">
                 <label className="block text-[11px] font-semibold text-[#374151] mb-1">Tipo</label>
-                <select value={effectType} onChange={(e) => setEffectType(e.target.value as "PORCENTAJE" | "VALOR")} className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#374151]">
+                <select
+                  value={effectType}
+                  onChange={(event) => setEffectType(event.target.value as "PORCENTAJE" | "VALOR")}
+                  className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
+                >
                   <option value="PORCENTAJE">Porcentaje</option>
                   <option value="VALOR">Monto fijo</option>
                 </select>
               </div>
+
               <div className="flex-1">
                 <label className="block text-[11px] font-semibold text-[#374151] mb-1">Valor</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-[#9ca3af]">
-                    {effectType === "PORCENTAJE" ? "%" : "$"}
-                  </span>
-                  <input type="number" value={effectValue} onChange={(e) => setEffectValue(e.target.value)} className="w-full pl-7 pr-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-[#1a56db] text-[#0f1117]" />
+                <input
+                  type="number"
+                  min="0"
+                  value={effectValue}
+                  onChange={(event) => setEffectValue(event.target.value)}
+                  className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
+                />
+              </div>
+            </div>
+          </section>
+
+          {!isEditing && (
+            <section>
+              <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Vigencia</h3>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#374151] mb-1">Desde</label>
+                  <input
+                    type="datetime-local"
+                    value={validFrom}
+                    onChange={(event) => setValidFrom(event.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#374151] mb-1">Hasta</label>
+                  <input
+                    type="datetime-local"
+                    value={validTo}
+                    onChange={(event) => setValidTo(event.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
+                  />
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
-          {/* Vigencia */}
-          <section>
-            <h3 className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider mb-3">Vigencia</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <DateTimeField label="Desde" value={validFrom} onChange={setValidFrom} />
-              <DateTimeField label="Hasta" value={validTo} onChange={setValidTo} />
-            </div>
-          </section>
+          {!isEditing && (
+            <section>
+              <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Productos asociados</h3>
 
-          {/* Productos asociados */}
-          <section>
-            <h3 className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider mb-3">Productos asociados</h3>
-            <div className="border border-[#e2e6ed] rounded-[6px] p-3 min-h-[60px] relative">
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {selectedProducts.map((p) => (
-                    <span key={p.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#e8f0fd] text-[#1a56db] text-[11px] font-medium rounded-full">
-                    {p.name}
-                      <button onClick={() => removeProduct(p.id)} className="text-[#1a56db]/60 hover:text-[#1a56db] ml-0.5">
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M2 2l6 6M8 2L2 8" />
-                      </svg>
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <input
-                  type="text"
+              <div className="border border-[#e2e6ed] rounded-[6px] p-3">
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {selectedProducts.map((product) => (
+                    <span key={product.id} className="px-2 py-0.5 bg-[#e8f0fd] text-[#1a56db] text-[11px] rounded-full">
+                      {product.name}
+                      <button
+                        onClick={() =>
+                          setSelectedProducts((previous) =>
+                            previous.filter((item) => item.id !== product.id)
+                          )
+                        }
+                        className="ml-1"
+                      >
+                        x
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <input
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por nombre o SKU…"
-                  className="w-full text-[13px] text-[#0f1117] placeholder-[#9ca3af] focus:outline-none"
-              />
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Buscar por nombre o SKU..."
+                  className="w-full text-[13px] border border-[#e2e6ed] rounded-[6px] px-3 py-2"
+                />
 
-              {suggestions.length > 0 && (
-                  <div className="absolute left-3 right-3 mt-1 bg-white border border-[#e2e6ed] rounded-[6px] shadow-lg z-10 max-h-40 overflow-y-auto">
-                    {suggestions.map((p) => (
-                        <button
-                            key={p.id}
-                            onClick={() => addProduct(p)}
-                            className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f1f3f7] flex items-center justify-between"
-                        >
-                          <span className="text-[#0f1117]">{p.name}</span>
-                          <span className="font-mono text-[11px] text-[#9ca3af]">{p.sku}</span>
-                        </button>
+                {suggestions.length > 0 && (
+                  <div className="mt-1 bg-white border border-[#e2e6ed] rounded-[6px] max-h-40 overflow-y-auto">
+                    {suggestions.map((product) => (
+                      <button
+                        key={product.id}
+                        onClick={() => {
+                          setSelectedProducts((previous) => [...previous, product]);
+                          setSearch("");
+                        }}
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f1f3f7]"
+                      >
+                        {product.name}
+                      </button>
                     ))}
                   </div>
-              )}
-            </div>
-          </section>
+                )}
+              </div>
+            </section>
+          )}
         </div>
 
-        <div className="px-6 py-4 border-t border-[#e2e6ed] flex items-center justify-end gap-3">
+        <div className="px-6 py-4 border-t border-[#e2e6ed] flex justify-end gap-3">
           <button
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px] hover:bg-[#f1f3f7] transition-colors disabled:opacity-50"
+            onClick={onClose}
+            className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px]"
           >
             Cancelar
           </button>
+
           <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="px-4 py-2 text-[13px] font-semibold bg-[#1a56db] text-white rounded-[6px] hover:bg-[#1648c0] transition-colors disabled:opacity-50"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-4 py-2 text-[13px] font-semibold bg-[#1a56db] text-white rounded-[6px] disabled:opacity-50"
           >
-            {loading ? "Guardando..." : "Guardar regla"}
+            {loading ? "Guardando..." : isEditing ? "Guardar cambios" : "Crear regla"}
           </button>
         </div>
       </div>

@@ -24,6 +24,7 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+*-local.properties
 
 ### STS ###
 .apt_generated

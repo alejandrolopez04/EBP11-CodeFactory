@@ -83,7 +83,7 @@ function SortableRuleRow({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rule.id,
-    disabled, // Solo se deshabilita si está guardando en el backend (saving)
+    disabled,
   });
 
   const style: CSSProperties = {
@@ -96,8 +96,6 @@ function SortableRuleRow({
   };
 
   const colorClass = !met ? "text-[#9ca3af]" : rule.effectValue >= 0 ? "text-[#16a34a]" : "text-[#dc2626]";
-  
-  // Las reglas que no aplican tienen una opacidad un poco más baja y fondo grisáceo sutil
   const rowOpacity = isInactive ? "opacity-60 bg-[#fafafa] hover:bg-[#f4f5f7]" : "hover:bg-[#f8f9fb]";
 
   return (
@@ -172,6 +170,7 @@ export default function ProductDetailScreen({
   const [calc, setCalc] = useState<ApiPriceCalculation | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [togglingStatus, setTogglingStatus] = useState(false); // Nuevo estado para el botón
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -203,10 +202,38 @@ export default function ProductDetailScreen({
     void load();
   }, [load]);
 
-  // Unificamos TODAS las reglas en un solo arreglo ordenado
-  const sortedRules = useMemo(() => [...rules].sort(byPriority), [rules]);
+  // Función para activar/desactivar el producto directamente desde aquí
+  const handleToggleStatus = async () => {
+    if (!product) return;
+    setTogglingStatus(true);
+    const action = product.productStatus === "ACTIVE" ? "deactivate" : "activate";
+    
+    try {
+      const res = await fetch(`${API_URL}/api/products/${product.id}/${action}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Error al cambiar el estado del producto.");
+      
+      const updatedProduct = await res.json();
+      setProduct(updatedProduct);
+      setToast({ 
+        message: `Producto ${updatedProduct.productStatus === "ACTIVE" ? "activado" : "desactivado"} correctamente.`, 
+        type: "success" 
+      });
+      
+      // Si pasa de inactivo a activo, recargamos el precio calculado
+      if (updatedProduct.productStatus === "ACTIVE") {
+        setCalc(await fetchProductPrice(product.id));
+      }
+    } catch (e) {
+      setToast({ message: e instanceof Error ? e.message : "Error al cambiar estado.", type: "error" });
+    } finally {
+      setTogglingStatus(false);
+    }
+  };
 
-  // Reglas que el motor aplicó (para el desglose y el check)
+  const sortedRules = useMemo(() => [...rules].sort(byPriority), [rules]);
   const applied = useMemo(() => new Set(calc?.appliedRuleIds ?? []), [calc]);
   const appliedInOrder = useMemo(() => sortedRules.filter((r) => applied.has(r.id)), [sortedRules, applied]);
 
@@ -216,18 +243,17 @@ export default function ProductDetailScreen({
   );
 
   const handleDragEnd = async ({ active, over }: DragEndEvent) => {
-    if (!over || active.id === over.id || saving || productId == null) return;
+    // Si el producto está inactivo, no permitimos reordenar
+    if (!over || active.id === over.id || saving || productId == null || product?.productStatus === "INACTIVE") return;
 
     const oldIndex = sortedRules.findIndex((r) => r.id === active.id);
     const newIndex = sortedRules.findIndex((r) => r.id === over.id);
     const reordered = arrayMove(sortedRules, oldIndex, newIndex);
 
-    // Se reasignan los mismos números de prioridad que ya tenían estas reglas al nuevo orden.
     const current = sortedRules.map((r) => r.priority);
     const canReuse = current.every((p) => p != null) && new Set(current).size === current.length;
     const slots = canReuse ? [...(current as number[])].sort((a, b) => a - b) : reordered.map((_, i) => i + 1);
     
-    // El payload ahora envía TODAS las reglas (incluso las inactivas) con su nueva prioridad
     const payload = reordered.map((r, i) => ({ ruleId: r.id, priority: slots[i] }));
 
     const previous = rules;
@@ -241,7 +267,7 @@ export default function ProductDetailScreen({
       setCalc(await fetchProductPrice(productId));
       setToast({ message: "Orden de prioridad guardado.", type: "success" });
     } catch (e) {
-      setRules(previous); // se revierte el orden en pantalla
+      setRules(previous);
       setToast({ message: e instanceof Error ? e.message : "No se pudo guardar el orden.", type: "error" });
     } finally {
       setSaving(false);
@@ -262,6 +288,8 @@ export default function ProductDetailScreen({
   const basePrice = calc?.basePrice ?? product?.basePrice ?? 0;
   const finalPrice = calc?.finalPrice ?? basePrice;
   const percentDiff = basePrice ? ((finalPrice - basePrice) / basePrice) * 100 : 0;
+  
+  const isInactiveProduct = product?.productStatus === "INACTIVE";
 
   return (
     <div className="p-8 max-w-5xl">
@@ -282,13 +310,53 @@ export default function ProductDetailScreen({
         <div className="bg-white border border-[#e2e6ed] rounded-[8px] p-8 text-center text-[#6b7280]">Cargando…</div>
       ) : (
         <>
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#0f1117] font-display">{product.name}</h1>
-            <span className="font-mono text-[12px] text-[#9ca3af] mt-0.5 block">SKU: {product.sku}</span>
+          {/* Header con Estado y Botón para alternar */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-[#0f1117] font-display">{product.name}</h1>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                  product.productStatus === "ACTIVE"
+                    ? "bg-[#dcfce7] text-[#16a34a]"
+                    : "bg-gray-200 text-gray-600"
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${product.productStatus === "ACTIVE" ? "bg-[#16a34a]" : "bg-gray-500"}`} />
+                  {product.productStatus === "ACTIVE" ? "Activo" : "Inactivo"}
+                </span>
+              </div>
+              <span className="font-mono text-[12px] text-[#9ca3af] mt-1 block">SKU: {product.sku}</span>
+            </div>
+            
+            <button
+              onClick={handleToggleStatus}
+              disabled={togglingStatus}
+              className={`px-3 py-1.5 text-[12px] font-semibold rounded-[6px] transition-colors border ${
+                product.productStatus === "ACTIVE"
+                  ? "text-[#dc2626] border-[#fecaca] hover:bg-[#fef2f2]"
+                  : "text-[#16a34a] border-[#bbf7d0] hover:bg-[#f0fdf4]"
+              } disabled:opacity-50`}
+            >
+              {togglingStatus ? "Cambiando..." : product.productStatus === "ACTIVE" ? "Desactivar producto" : "Activar producto"}
+            </button>
           </div>
 
-          {/* Precio y Desglose */}
-          <div className="bg-white border border-[#e2e6ed] rounded-[10px] p-6 mb-5">
+          {/* Banner de advertencia si está inactivo */}
+          {isInactiveProduct && (
+            <div className="mb-5 px-4 py-3 bg-gray-100 border border-gray-300 rounded-[8px] flex items-start gap-3">
+              <svg className="text-gray-500 mt-0.5 shrink-0" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M8 5v4M8 11v1M2.5 13.5L8 2.5l5.5 11h-11z" />
+              </svg>
+              <div>
+                <p className="text-[13px] font-bold text-gray-700">Este producto está Inactivo</p>
+                <p className="text-[12px] text-gray-600 mt-0.5">
+                  Las reglas de pricing no se están aplicando al cálculo. El precio mostrado es únicamente el precio base.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Precio y Desglose - Se aplica grayscale si está inactivo */}
+          <div className={`bg-white border border-[#e2e6ed] rounded-[10px] p-6 mb-5 transition-all ${isInactiveProduct ? "grayscale opacity-60" : ""}`}>
             <div className="flex gap-8">
               <div>
                 <div className="text-[11px] font-semibold text-[#6b7280] uppercase tracking-wide mb-1">Precio base</div>
@@ -298,11 +366,11 @@ export default function ProductDetailScreen({
                 <div className="text-[11px] font-semibold text-[#6b7280] uppercase tracking-wide mb-1">
                   Precio actual calculado
                 </div>
-                <div className="text-[32px] font-bold text-[#1a56db] font-display">{fmt(finalPrice)}</div>
-                {percentDiff !== 0 && (
-                  <div
-                    className={`text-[12px] font-medium mt-0.5 ${percentDiff > 0 ? "text-[#16a34a]" : "text-[#dc2626]"}`}
-                  >
+                <div className="text-[32px] font-bold text-[#1a56db] font-display">
+                  {isInactiveProduct ? fmt(basePrice) : fmt(finalPrice)}
+                </div>
+                {!isInactiveProduct && percentDiff !== 0 && (
+                  <div className={`text-[12px] font-medium mt-0.5 ${percentDiff > 0 ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
                     {percentDiff > 0 ? "↑ +" : "↓ "}
                     {percentDiff.toFixed(1)}% sobre el precio base
                   </div>
@@ -310,41 +378,48 @@ export default function ProductDetailScreen({
               </div>
             </div>
 
-            {/* DESGLOSE DEL CÁLCULO - CON ID Y FLEX-WRAP */}
-            <div className="mt-5 pt-4 border-t border-[#f1f3f7] flex flex-wrap items-center gap-2 text-[13px] text-[#374151]">
-              <span className="font-mono text-[#6b7280]">{fmt(basePrice)}</span>
-              <span className="text-[#9ca3af]">base</span>
-              
-              {appliedInOrder.map((rule) => (
-                <span 
-                  key={rule.id} 
-                  className="inline-flex items-center gap-1.5 bg-[#f8f9fb] px-1.5 py-1 rounded border border-[#e2e6ed]"
-                  title={conditionText(rule)}
-                >
-                  <span className={`font-mono font-bold ${rule.effectValue >= 0 ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
-                    {effectText(rule)}
+            {/* DESGLOSE DEL CÁLCULO */}
+            {!isInactiveProduct && (
+              <div className="mt-5 pt-4 border-t border-[#f1f3f7] flex flex-wrap items-center gap-2 text-[13px] text-[#374151]">
+                <span className="font-mono text-[#6b7280]">{fmt(basePrice)}</span>
+                <span className="text-[#9ca3af]">base</span>
+                
+                {appliedInOrder.map((rule) => (
+                  <span 
+                    key={rule.id} 
+                    className="inline-flex items-center gap-1.5 bg-[#f8f9fb] px-1.5 py-1 rounded border border-[#e2e6ed]"
+                    title={conditionText(rule)}
+                  >
+                    <span className={`font-mono font-bold ${rule.effectValue >= 0 ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
+                      {effectText(rule)}
+                    </span>
+                    <span className="text-[#6b7280] text-[10px] uppercase font-bold tracking-wider">
+                      RGL-{String(rule.id).padStart(3, "0")}
+                    </span>
                   </span>
-                  <span className="text-[#6b7280] text-[10px] uppercase font-bold tracking-wider">
-                    RGL-{String(rule.id).padStart(3, "0")}
-                  </span>
-                </span>
-              ))}
-              
-              <span className="text-[#9ca3af] mx-1">=</span>
-              <span className="font-mono font-bold text-[15px] text-[#1a56db]">{fmt(finalPrice)}</span>
-            </div>
+                ))}
+                
+                <span className="text-[#9ca3af] mx-1">=</span>
+                <span className="font-mono font-bold text-[15px] text-[#1a56db]">{fmt(finalPrice)}</span>
+              </div>
+            )}
             
-            {calc?.summary && <p className="mt-3 text-[11px] text-[#9ca3af]">{calc.summary}</p>}
+            {calc?.summary && !isInactiveProduct && <p className="mt-3 text-[11px] text-[#9ca3af]">{calc.summary}</p>}
+            {isInactiveProduct && (
+              <div className="mt-5 pt-4 border-t border-[#f1f3f7] text-[13px] text-gray-500 italic">
+                Sin cálculos ni reglas aplicadas.
+              </div>
+            )}
           </div>
 
-          {/* TABLA UNIFICADA (TODAS LAS REGLAS) */}
-          <div className="bg-white border border-[#e2e6ed] rounded-[8px] overflow-hidden mb-5">
+          {/* TABLA UNIFICADA - Se aplica grayscale y se deshabilita el drag si está inactivo */}
+          <div className={`bg-white border border-[#e2e6ed] rounded-[8px] overflow-hidden mb-5 transition-all ${isInactiveProduct ? "grayscale opacity-60" : ""}`}>
             <div className="px-5 py-3 border-b border-[#e2e6ed] bg-[#f8f9fb] flex items-center justify-between">
               <h2 className="text-[12px] font-bold text-[#374151] font-display uppercase tracking-wide">
                 Reglas evaluadas
               </h2>
               <span className="text-[11px] text-[#9ca3af]">
-                {saving ? "Guardando…" : "Arrastra para reordenar"}
+                {isInactiveProduct ? "Reglas pausadas" : saving ? "Guardando…" : "Arrastra para reordenar"}
               </span>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -369,15 +444,14 @@ export default function ProductDetailScreen({
                       </tr>
                     )}
                     
-                    {/* Renderizamos TODAS las reglas por igual, con su índice natural */}
                     {sortedRules.map((rule, i) => (
                       <SortableRuleRow
                         key={rule.id}
                         rule={rule}
                         position={i + 1}
-                        met={applied.has(rule.id)}
+                        met={!isInactiveProduct && applied.has(rule.id)} // Si está inactivo, forzamos a que no muestre el "✓"
                         isInactive={!isPrioritizable(rule)}
-                        disabled={saving} // Solo se bloquea si está guardando
+                        disabled={saving || isInactiveProduct} // Bloquea el drag si está inactivo
                       />
                     ))}
                   </tbody>

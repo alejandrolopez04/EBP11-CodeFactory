@@ -26,6 +26,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
 
   // Producto pendiente por confirmar eliminación
   const [productToDelete, setProductToDelete] = useState<ApiProduct | null>(null);
+  const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
 
   // Producto cuyo switch de estado está en proceso (para deshabilitar doble clic)
   const [togglingStatusId, setTogglingStatusId] = useState<number | null>(null);
@@ -57,41 +58,57 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
   const showEmpty = !loading && !loadError && products.length === 0;
 
   // Función que elimina definitivamente
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!productToDelete) return;
-    setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
-    setToast(`Producto "${productToDelete.name}" eliminado`);
-    setProductToDelete(null);
+    const product = productToDelete;
+    setDeletingProductId(product.id);
+
+    try {
+      const response = await fetch(`${PRODUCTS_API_URL}/${product.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.message || "No se pudo eliminar el producto.");
+      }
+
+      setProducts((prev) => prev.filter((item) => item.id !== product.id));
+      setToast(`Producto "${product.name}" eliminado`);
+      setProductToDelete(null);
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "No se pudo eliminar el producto.");
+    } finally {
+      setDeletingProductId(null);
+    }
   };
 
   // Función que activa / desactiva un producto
   const handleToggleStatus = async (product: ApiProduct) => {
     const isCurrentlyActive = product.productStatus === "ACTIVE";
-    const newStatus = isCurrentlyActive ? "INACTIVE" : "ACTIVE";
+    const action = isCurrentlyActive ? "deactivate" : "activate";
 
     setTogglingStatusId(product.id);
 
     try {
-      // 🔴 MODO MOCK — actualización local optimista.
-      // Cuando el endpoint esté listo, reemplaza este bloque por el fetch:
-      //
-      // const res = await fetch(`${PRODUCTS_API_URL}/${product.id}/status`, {
-      //   method: "PATCH",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ productStatus: newStatus }),
-      // });
-      // if (!res.ok) throw new Error();
+      const response = await fetch(`${PRODUCTS_API_URL}/${product.id}/${action}`, {
+        method: "PATCH",
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.message || "No se pudo actualizar el estado del producto.");
+      }
 
+      const updatedProduct: ApiProduct = await response.json();
       setProducts((prev) =>
         prev.map((p) =>
-          p.id === product.id ? { ...p, productStatus: newStatus } : p
+          p.id === updatedProduct.id ? updatedProduct : p
         )
       );
       setToast(
-        `Producto "${product.name}" ${newStatus === "ACTIVE" ? "activado" : "desactivado"} exitosamente`
+        `Producto "${updatedProduct.name}" ${updatedProduct.productStatus === "ACTIVE" ? "activado" : "desactivado"} exitosamente`
       );
-    } catch {
-      setToast("No se pudo actualizar el estado del producto");
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "No se pudo actualizar el estado del producto");
     } finally {
       setTogglingStatusId(null);
     }
@@ -301,9 +318,10 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
                   </button>
                   <button
                       onClick={confirmDelete}
+                      disabled={deletingProductId === productToDelete.id}
                       className="px-4 py-2 text-[13px] font-semibold bg-[#1a56db] text-white rounded-[6px] hover:bg-[#1648c0] transition-colors"
                   >
-                    Aceptar
+                    {deletingProductId === productToDelete.id ? "Eliminando..." : "Aceptar"}
                   </button>
                 </div>
               </div>

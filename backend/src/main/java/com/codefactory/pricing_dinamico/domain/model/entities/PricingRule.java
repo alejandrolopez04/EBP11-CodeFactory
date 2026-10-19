@@ -77,6 +77,14 @@ public class PricingRule {
         this.productIds = new ArrayList<>(productIds);
     }
 
+    public void removeProduct(Integer productId) {
+        if (productIds != null) {
+            productIds = productIds.stream()
+                    .filter(existingId -> !existingId.equals(productId))
+                    .toList();
+        }
+    }
+
     public void updateValidity(LocalDateTime validFrom, LocalDateTime validTo) {
         if ((validFrom == null) != (validTo == null)) {
             throw new IllegalArgumentException("Defina la fecha de inicio y la fecha de fin de la vigencia.");

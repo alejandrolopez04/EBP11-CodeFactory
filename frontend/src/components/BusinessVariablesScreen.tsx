@@ -21,6 +21,7 @@ import {
     validateScheduleValues,
 } from "../business-variables/validators";
 import RestrictedButton from "../auth/RestrictedButton";
+import LoadingScreen from "./LoadingScreen";
 
 export default function BusinessVariablesScreen() {
     const { variables, status, save } = useBusinessVariables();
@@ -52,8 +53,15 @@ export default function BusinessVariablesScreen() {
     const [draftHighSeasonMonths, setDraftHighSeasonMonths] = useState<string[]>([]);
 
     // Los return condicionales van después de TODOS los hooks (reglas de los hooks).
-    if (status === "loading") return <p className="p-8">Cargando variables…</p>;
-    if (status === "error") return <p className="p-8">No se pudieron cargar las variables.</p>;
+    if (status === "loading") return <LoadingScreen label="Cargando variables…" />;
+    if (status === "error") {
+        return (
+            <LoadingScreen
+                label="No se pudieron cargar las variables"
+                error="Verifica que el backend esté corriendo e intenta nuevamente."
+            />
+        );
+    }
     if (variables === null) return null;
 
     const demandErrors = validateDemandValues(draftDemandValues);

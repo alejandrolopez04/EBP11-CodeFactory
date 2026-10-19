@@ -2,21 +2,20 @@ import type { ReactNode } from "react";
 import { useBusinessVariables } from "./BusinessVariablesContext";
 import SetupWizardModal from "./SetupWizardModal";
 import { useProfile } from "../auth/ProfileContext";
+import LoadingScreen from "../components/LoadingScreen";
 
 export default function AppGate({ children }: { children: ReactNode }) {
-  const { variables, isLoaded } = useBusinessVariables();
+  const { variables, status, isLoaded } = useBusinessVariables();
   const { canModify } = useProfile();
 
   if (!isLoaded) {
-    return null;
+    return <LoadingScreen label="Cargando variables…" />;
   }
-
-  const needsSetup = variables === null;
 
   return (
     <>
       {children}
-      {variables === null &&
+      {status === "ready" && variables === null &&
         (canModify ? (
           <SetupWizardModal />
         ) : (

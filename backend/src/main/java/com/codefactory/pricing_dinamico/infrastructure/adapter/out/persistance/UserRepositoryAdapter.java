@@ -3,6 +3,8 @@ package com.codefactory.pricing_dinamico.infrastructure.adapter.out.persistance;
 import com.codefactory.pricing_dinamico.application.port.out.UserRepositoryPort;
 import com.codefactory.pricing_dinamico.domain.model.entities.User;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -21,5 +23,12 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     }
     private UserJpaEntity toEntity(User u) {
         return new UserJpaEntity(u.getId(), u.getEmail(), u.getFullName(), u.getRole(), u.isActive());
+    }
+
+    @Override public Optional<User> findById(Long id) {
+        return repo.findById(id).map(this::toDomain);
+    }
+    @Override public List<User> findAllActive() {
+        return repo.findByActiveTrueOrderByIdAsc().stream().map(this::toDomain).toList();
     }
 }

@@ -29,21 +29,21 @@ public class ProfileService implements GetProfilesUseCase, AuthorizeOperationUse
     }
 
     @Override
-    public void checkCanModify(String profileIdHeader) {
-        if (profileIdHeader == null || profileIdHeader.isBlank()) {
+    public User authenticate(String token) {
+        if (token == null || token.isBlank()) {
             throw new ProfileRequiredException("Debe seleccionar un perfil para realizar esta acción.");
         }
-        Long id;
-        try {
-            id = Long.parseLong(profileIdHeader.trim());
-        } catch (NumberFormatException e) {
-            throw new ProfileRequiredException("Perfil inválido.");
-        }
-        User user = userRepositoryPort.findById(id)
+        return userRepositoryPort.findByAccessToken(token.trim())
                 .filter(User::isActive)
-                .orElseThrow(() -> new ProfileRequiredException("Perfil inválido o inactivo."));
+                .orElseThrow(() -> new ProfileRequiredException("Token inválido o perfil inactivo."));
+    }
+
+    @Override
+    public void checkCanModify(String token) {
+        User user = authenticate(token);
         if (!user.canModify()) {
-            throw new OperationNotAllowedException("Su perfil (" + user.getRole() + ") no tiene permiso para realizar esta acción.");
+            throw new OperationNotAllowedException(
+                    "Su perfil (" + user.getRole() + ") no tiene permiso para realizar esta acción.");
         }
     }
 

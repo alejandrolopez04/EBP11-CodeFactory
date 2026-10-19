@@ -6,8 +6,12 @@ import com.codefactory.pricing_dinamico.domain.model.entities.User;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.security.SecureRandom;
+import java.util.Base64;
+
 @Component
 public class ProfileSeeder implements CommandLineRunner {
+    private static final SecureRandom RANDOM = new SecureRandom();
     private final UserRepositoryPort userRepositoryPort;
 
     public ProfileSeeder(UserRepositoryPort userRepositoryPort) {
@@ -16,13 +20,22 @@ public class ProfileSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        create("admin@pricing.com", "Ana Martínez", Role.ADMIN);
-        create("analista@pricing.com", "Carlos Gómez", Role.ANALISTA);
+        upsert("admin@pricing.com", "Ana Martínez", Role.ADMIN);
+        upsert("analista@pricing.com", "Carlos Gómez", Role.ANALISTA);
     }
 
-    private void create(String email, String fullName, Role role) {
-        if (!userRepositoryPort.existsByEmail(email)) {
-            userRepositoryPort.save(new User(null, email, fullName, role, true));
-        }
+    private void upsert(String email, String fullName, Role role) {
+        userRepositoryPort.findByEmail(email).ifPresentOrElse(user -> {
+            if (user.getAccessToken() == null) {
+                user.setAccessToken(newToken());
+                userRepositoryPort.save(user);
+            }
+        }, () -> userRepositoryPort.save(new User(null, email, fullName, role, true, newToken())));
+    }
+
+    private static String newToken() {
+        byte[] bytes = new byte[32];
+        RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes); // 43 caracteres
     }
 }

@@ -11,4 +11,5 @@ public interface UserRepositoryPort {
     Optional<User> findById(Long id);
     List<User> findAllActive();
     User save(User user);
+    Optional<User> findByAccessToken(String accessToken);
 }

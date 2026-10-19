@@ -16,15 +16,26 @@ public class UserJpaEntity {
     private Role role;
     @Column(nullable = false)
     private boolean active = true;
+    @Column(unique = true, length = 64)
+    private String accessToken;
 
     public UserJpaEntity() {}
 
-    public UserJpaEntity(Long id, String email, String fullName, Role role, boolean active) {
+    public UserJpaEntity(Long id, String email, String fullName, Role role, boolean active, String accessToken) {
         this.id = id;
         this.email = email;
         this.fullName = fullName;
         this.role = role;
         this.active = active;
+        this.accessToken = accessToken;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
     public Long getId() {

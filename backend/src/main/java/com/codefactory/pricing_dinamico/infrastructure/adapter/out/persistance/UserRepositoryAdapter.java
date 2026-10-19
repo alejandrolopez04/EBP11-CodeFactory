@@ -18,16 +18,19 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     @Override public boolean existsByEmail(String email) { return repo.existsByEmailIgnoreCase(email); }
     @Override public User save(User u) { return toDomain(repo.save(toEntity(u))); }
 
+    @Override public Optional<User> findByAccessToken(String accessToken) {
+        return repo.findByAccessToken(accessToken).map(this::toDomain);
+    }
     private User toDomain(UserJpaEntity e) {
-        return new User(e.getId(), e.getEmail(), e.getFullName(), e.getRole(), e.isActive());
+        return new User(e.getId(), e.getEmail(), e.getFullName(), e.getRole(), e.isActive(), e.getAccessToken());
     }
     private UserJpaEntity toEntity(User u) {
-        return new UserJpaEntity(u.getId(), u.getEmail(), u.getFullName(), u.getRole(), u.isActive());
+        return new UserJpaEntity(u.getId(), u.getEmail(), u.getFullName(), u.getRole(), u.isActive(), u.getAccessToken());
     }
-
     @Override public Optional<User> findById(Long id) {
         return repo.findById(id).map(this::toDomain);
     }
+
     @Override public List<User> findAllActive() {
         return repo.findByActiveTrueOrderByIdAsc().stream().map(this::toDomain).toList();
     }

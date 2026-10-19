@@ -6,11 +6,16 @@ public class User {
     private String fullName;
     private Role role;
     private boolean active;
+    private String accessToken;
 
-    public User(Long id, String email, String fullName, Role role, boolean active) {
-        this.id = id; this.email = email;
-        this.fullName = fullName; this.role = role; this.active = active;
+    public User(Long id, String email, String fullName, Role role, boolean active, String accessToken) {
+        this.id = id; this.email = email; this.fullName = fullName;
+        this.role = role; this.active = active; this.accessToken = accessToken;
     }
+
+    public String getAccessToken() { return accessToken; }
+
+    public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
 
     public boolean isAdmin() { return role == Role.ADMIN; }
 

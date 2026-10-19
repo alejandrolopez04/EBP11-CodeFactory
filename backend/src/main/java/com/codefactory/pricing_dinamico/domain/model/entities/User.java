@@ -53,4 +53,6 @@ public class User {
     public void setActive(boolean active) {
         this.active = active;
     }
+
+    public boolean canModify() { return role == Role.ADMIN; }
 }

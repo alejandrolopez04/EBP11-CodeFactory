@@ -63,8 +63,8 @@ public class PricingRule {
         if (effectType == null) {
             throw new IllegalArgumentException("El tipo de efecto es obligatorio.");
         }
-        if (effectValue == null || effectValue.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("El valor del efecto debe ser mayor o igual a 0.");
+        if (effectValue == null) {
+            throw new IllegalArgumentException("El valor del efecto es obligatorio.");
         }
         this.effectType = effectType;
         this.effectValue = effectValue;

@@ -121,8 +121,8 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
   const handleSubmit = async () => {
     setError(null);
 
-    if (!effectValue || Number(effectValue) < 0) {
-      setError("El valor del efecto debe ser mayor o igual a 0.");
+    if (!effectValue || !Number.isFinite(Number(effectValue))) {
+      setError("El valor del efecto debe ser un número válido.");
       return;
     }
 
@@ -249,7 +249,6 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
                 <label className="block text-[11px] font-semibold text-[#374151] mb-1">Valor</label>
                 <input
                   type="number"
-                  min="0"
                   value={effectValue}
                   onChange={(event) => setEffectValue(event.target.value)}
                   className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"

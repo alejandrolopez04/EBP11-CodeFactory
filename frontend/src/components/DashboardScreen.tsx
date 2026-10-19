@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../api/client";
+import { apiFetch } from "../api/http";
+
 
 const DASHBOARD_API_URL = `${API_URL}/api/dashboard`;
 const REFRESH_MS = 15000;
@@ -38,7 +40,7 @@ export default function DashboardScreen() {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetch(DASHBOARD_API_URL);
+                const res = await apiFetch(DASHBOARD_API_URL);
                 if (!res.ok) throw new Error();
                 setData(await res.json());
                 setError(null);

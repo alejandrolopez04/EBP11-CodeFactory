@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import ProductFormModal, { type ApiProduct } from "./ProductFormModal";
 import Toast from "./Toast"
 import { API_URL } from "../api/client";
+import { apiFetch } from "../api/http";
+import RestrictedButton from "../auth/RestrictedButton";
 
 
 const PRODUCTS_API_URL = `${API_URL}/api/products`;
@@ -29,7 +31,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
 
   const loadProducts = useCallback(async () => {
     try {
-      const res = await fetch(PRODUCTS_API_URL);
+      const res = await apiFetch(PRODUCTS_API_URL);
       if (!res.ok) throw new Error();
       setProducts(await res.json());
       setLoadError(null);
@@ -67,12 +69,12 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-[#0f1117] font-display">Productos</h1>
           <div className="flex items-center gap-3">
-            <button
+            <RestrictedButton
                 onClick={() => setShowModal(true)}
                 className="px-4 py-2 bg-[#1a56db] text-white text-[13px] font-semibold rounded-[6px] hover:bg-[#1648c0] transition-colors flex items-center gap-2"
             >
               <span>+</span> Registrar producto
-            </button>
+            </RestrictedButton>
           </div>
         </div>
 
@@ -150,23 +152,23 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
                         </td>
                         <td className="px-3 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <button onClick={onViewDetail} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver detalle">
+                            <RestrictedButton onClick={onViewDetail} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver detalle">
                               <EyeIcon />
-                            </button>
-                            <button
+                            </RestrictedButton>
+                            <RestrictedButton
                                 onClick={() => setEditingProduct(p)}
                                 className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors"
                                 title="Editar"
                             >
                               <EditIcon />
-                            </button>
-                            <button
+                            </RestrictedButton>
+                            <RestrictedButton
                                 onClick={() => setProductToDelete(p)}
                                 className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#fef2f2] hover:text-[#dc2626] transition-colors"
                                 title="Eliminar"
                             >
                               <TrashIcon />
-                            </button>
+                            </RestrictedButton>
                           </div>
                         </td>
                       </tr>
@@ -177,13 +179,13 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
                 <div className="px-4 py-3 border-t border-[#e2e6ed] flex items-center justify-between">
                   <span className="text-[12px] text-[#6b7280]">Mostrando {filtered.length} de {products.length} productos</span>
                   <div className="flex items-center gap-1">
-                    <button className="px-2.5 py-1 text-[12px] font-medium text-[#6b7280] border border-[#e2e6ed] rounded-[4px] hover:bg-[#f1f3f7] disabled:opacity-40" disabled>
+                    <RestrictedButton className="px-2.5 py-1 text-[12px] font-medium text-[#6b7280] border border-[#e2e6ed] rounded-[4px] hover:bg-[#f1f3f7] disabled:opacity-40" disabled>
                       ← Anterior
-                    </button>
-                    <button className="px-2.5 py-1 text-[12px] font-semibold bg-[#1a56db] text-white rounded-[4px]">1</button>
-                    <button className="px-2.5 py-1 text-[12px] font-medium text-[#6b7280] border border-[#e2e6ed] rounded-[4px] hover:bg-[#f1f3f7]">
+                    </RestrictedButton>
+                    <RestrictedButton className="px-2.5 py-1 text-[12px] font-semibold bg-[#1a56db] text-white rounded-[4px]">1</RestrictedButton>
+                    <RestrictedButton className="px-2.5 py-1 text-[12px] font-medium text-[#6b7280] border border-[#e2e6ed] rounded-[4px] hover:bg-[#f1f3f7]">
                       Siguiente →
-                    </button>
+                    </RestrictedButton>
                   </div>
                 </div>
               </div>
@@ -242,18 +244,18 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
 
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-[#e2e6ed] flex items-center justify-end gap-3">
-                  <button
+                  <RestrictedButton
                       onClick={() => setProductToDelete(null)}
                       className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px] hover:bg-[#f1f3f7] transition-colors"
                   >
                     Cancelar
-                  </button>
-                  <button
+                  </RestrictedButton>
+                  <RestrictedButton
                       onClick={confirmDelete}
                       className="px-4 py-2 text-[13px] font-semibold bg-[#1a56db] text-white rounded-[6px] hover:bg-[#1648c0] transition-colors"
                   >
                     Aceptar
-                  </button>
+                  </RestrictedButton>
                 </div>
               </div>
             </div>
@@ -275,12 +277,12 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         </div>
         <h3 className="text-[16px] font-semibold text-[#0f1117] font-display mb-1">Aún no has registrado productos</h3>
         <p className="text-[13px] text-[#6b7280] mb-5 max-w-xs">Registra tu primer producto para comenzar a configurar reglas de pricing dinámico.</p>
-        <button
+        <RestrictedButton
             onClick={onAdd}
             className="px-4 py-2 bg-[#1a56db] text-white text-[13px] font-semibold rounded-[6px] hover:bg-[#1648c0] transition-colors flex items-center gap-2"
         >
           <span>+</span> Registrar producto
-        </button>
+        </RestrictedButton>
       </div>
   );
 }

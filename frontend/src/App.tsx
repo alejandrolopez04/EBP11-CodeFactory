@@ -8,6 +8,7 @@ import DashboardScreen from "./components/DashboardScreen";
 import BusinessVariablesScreen from "./components/BusinessVariablesScreen";
 import { BusinessVariablesProvider } from "./business-variables/BusinessVariablesContext";
 import AppGate from "./business-variables/AppGate";
+import { ProfileProvider } from "./auth/ProfileContext";
 
 export type Screen = "dashboard" | "products" | "rules" | "variables" | "history" | "product-detail";
 
@@ -17,16 +18,17 @@ export default function App() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     return (
-        <BusinessVariablesProvider>
+        <ProfileProvider>
+            <BusinessVariablesProvider>
             <AppGate>
                 <div className="flex h-full bg-[#f4f5f7]">
-                    <Sidebar 
-                        active={activeScreen} 
-                        onNavigate={setActiveScreen} 
+                    <Sidebar
+                        active={activeScreen}
+                        onNavigate={setActiveScreen}
                         isCollapsed={isSidebarCollapsed}
                         toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                     />
-                    
+
                     <main className="flex-1 overflow-auto">
                         {activeScreen === "dashboard" && <DashboardScreen />}
                         {activeScreen === "products" && <ProductsScreen onViewDetail={() => setActiveScreen("product-detail")} />}
@@ -38,5 +40,6 @@ export default function App() {
                 </div>
             </AppGate>
         </BusinessVariablesProvider>
+        </ProfileProvider>
     );
 }

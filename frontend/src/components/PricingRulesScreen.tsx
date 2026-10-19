@@ -7,6 +7,7 @@ import {
   fetchPricingRules,
   type ApiPricingRule,
 } from "../api/client";
+import RestrictedButton from "../auth/RestrictedButton";
 
 const VARIABLE_LABELS: Record<string, string> = {
   DEMANDA: "Demanda",
@@ -112,7 +113,7 @@ export default function PricingRulesScreen() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#0f1117] font-display">Reglas de Pricing</h1>
-        <button
+        <RestrictedButton
           onClick={() => {
             setEditingRule(null);
             setShowModal(true);
@@ -120,7 +121,7 @@ export default function PricingRulesScreen() {
           className="px-4 py-2 bg-[#1a56db] text-white text-[13px] font-semibold rounded-[6px] hover:bg-[#1648c0] transition-colors"
         >
           + Crear regla
-        </button>
+        </RestrictedButton>
       </div>
 
       {error && (
@@ -176,7 +177,7 @@ export default function PricingRulesScreen() {
                   </td>
                   <td className="px-3 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button
+                      <RestrictedButton
                         onClick={() => {
                           setEditingRule(rule);
                           setShowModal(true);
@@ -184,9 +185,9 @@ export default function PricingRulesScreen() {
                         className="px-2 py-1 rounded-[4px] text-[11px] font-semibold text-[#1a56db] hover:bg-[#e8f0fd]"
                       >
                         Editar
-                      </button>
+                      </RestrictedButton>
 
-                      <button
+                      <RestrictedButton
                         onClick={() => setConfirmRule(rule)}
                         className={`px-2 py-1 rounded-[4px] text-[11px] font-semibold ${
                           rule.ruleStatus === "ACTIVE"
@@ -195,7 +196,7 @@ export default function PricingRulesScreen() {
                         }`}
                       >
                         {rule.ruleStatus === "ACTIVE" ? "Desactivar" : "Activar"}
-                      </button>
+                      </RestrictedButton>
                     </div>
                   </td>
                 </tr>
@@ -218,20 +219,20 @@ export default function PricingRulesScreen() {
             </p>
 
             <div className="flex gap-3 justify-end">
-              <button
+              <RestrictedButton
                 onClick={() => setConfirmRule(null)}
                 className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px]"
               >
                 Cancelar
-              </button>
-              <button
+              </RestrictedButton>
+              <RestrictedButton
                 onClick={handleToggleStatus}
                 className={`px-4 py-2 text-[13px] font-semibold text-white rounded-[6px] ${
                   confirmRule.ruleStatus === "ACTIVE" ? "bg-[#dc2626]" : "bg-[#16a34a]"
                 }`}
               >
                 {confirmRule.ruleStatus === "ACTIVE" ? "Desactivar" : "Activar"}
-              </button>
+              </RestrictedButton>
             </div>
           </div>
         </div>

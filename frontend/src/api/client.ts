@@ -1,4 +1,5 @@
 export const API_URL = import.meta.env.VITE_API_URL;
+import { apiFetch } from "./http";
 
 const PRICING_RULES_URL = `${API_URL}/api/pricing_rules`;
 const PRICING_RULES_MANAGEMENT_URL = `${API_URL}/api/pricing-rules-management`;
@@ -18,7 +19,7 @@ export interface ApiPricingRule {
 }
 
 export async function fetchPricingRules(): Promise<ApiPricingRule[]> {
-  const response = await fetch(PRICING_RULES_URL);
+  const response = await apiFetch(PRICING_RULES_URL);
 
   if (!response.ok) {
     throw new Error("No se pudieron cargar las reglas de pricing.");
@@ -53,7 +54,7 @@ export async function updatePricingRule(
     params.append("timeCondition", payload.timeCondition);
   }
 
-  const response = await fetch(`${PRICING_RULES_MANAGEMENT_URL}/${id}?${params.toString()}`, {
+  const response = await apiFetch(`${PRICING_RULES_MANAGEMENT_URL}/${id}?${params.toString()}`, {
     method: "PUT",
   });
 
@@ -66,7 +67,7 @@ export async function updatePricingRule(
 }
 
 export async function activatePricingRule(id: number): Promise<ApiPricingRule> {
-  const response = await fetch(`${PRICING_RULES_MANAGEMENT_URL}/${id}/activate`, {
+  const response = await apiFetch(`${PRICING_RULES_MANAGEMENT_URL}/${id}/activate`, {
     method: "PATCH",
   });
 
@@ -78,7 +79,7 @@ export async function activatePricingRule(id: number): Promise<ApiPricingRule> {
 }
 
 export async function deactivatePricingRule(id: number): Promise<ApiPricingRule> {
-  const response = await fetch(`${PRICING_RULES_MANAGEMENT_URL}/${id}/deactivate`, {
+  const response = await apiFetch(`${PRICING_RULES_MANAGEMENT_URL}/${id}/deactivate`, {
     method: "PATCH",
   });
 

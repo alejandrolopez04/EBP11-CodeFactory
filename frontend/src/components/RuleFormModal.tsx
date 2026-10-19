@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { API_URL, updatePricingRule, type ApiPricingRule } from "../api/client";
+import { apiFetch } from "../api/http";
+
+
 
 const RULES_API_URL = `${API_URL}/api/pricing_rules`;
 const PRODUCTS_API_URL = `${API_URL}/api/products`;
@@ -73,7 +76,7 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(PRODUCTS_API_URL)
+    apiFetch(PRODUCTS_API_URL)
       .then((response) => response.json())
       .then((data: ApiProduct[]) => setAllProducts(data))
       .catch(() => setError("No se pudieron cargar los productos."));
@@ -154,7 +157,7 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
 
         payload[currentConfig.field] = conditionValue;
 
-        const response = await fetch(RULES_API_URL, {
+        const response = await apiFetch(RULES_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

@@ -1,4 +1,6 @@
 import type { Screen } from "../App";
+import { useProfile } from "../auth/ProfileContext";
+import { ROLE_LABELS } from "../api/profile";
 
 const nav = [
   { id: "dashboard", label: "Dashboard", icon: GridIcon },
@@ -19,7 +21,14 @@ export default function Sidebar({
   isCollapsed: boolean; 
   toggleSidebar: () => void; 
 }) {
-  return (
+
+    const { profiles, current, switchProfile } = useProfile();
+    const initials = current
+        ? current.fullName.split(" ").map((w) => w[0]).slice(0, 2).join("")
+        : "?";
+
+
+    return (
     <aside className={`bg-white border-r border-[#e2e6ed] flex flex-col shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-60'}`}>
       
       {/* HEADER */}
@@ -77,18 +86,32 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* FOOTER (Perfil) */}
-      <div className={`py-4 border-t border-[#e2e6ed] flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-4 gap-2.5'}`}>
-        <div className="w-7 h-7 rounded-full bg-[#e8ecf2] flex items-center justify-center shrink-0">
-          <span className="text-[11px] font-semibold text-[#374151] font-display">AM</span>
+        {/* FOOTER (Perfil activo + switch) */}
+        <div className={`py-4 border-t border-[#e2e6ed] flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-4 gap-2.5'}`}>
+            <div
+                className="w-7 h-7 rounded-full bg-[#e8ecf2] flex items-center justify-center shrink-0"
+                title={isCollapsed && current ? `${current.fullName} · ${ROLE_LABELS[current.role]}` : undefined}
+            >
+                <span className="text-[11px] font-semibold text-[#374151] font-display">{initials}</span>
+            </div>
+            {!isCollapsed && (
+                <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-semibold text-[#0f1117] truncate">
+                        {current?.fullName ?? "Sin perfil"}
+                    </div>
+                    <select
+                        aria-label="Cambiar perfil"
+                        value={current?.id ?? ""}
+                        onChange={(e) => switchProfile(Number(e.target.value))}
+                        className="mt-0.5 w-full text-[10px] text-[#6b7280] bg-transparent border border-[#e2e6ed] rounded-[4px] px-1 py-0.5 cursor-pointer hover:border-[#1a56db] focus:outline-none focus:border-[#1a56db]"
+                    >
+                        {profiles.map((p) => (
+                            <option key={p.id} value={p.id}>{ROLE_LABELS[p.role]}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
         </div>
-        {!isCollapsed && (
-          <div className="whitespace-nowrap overflow-hidden">
-            <div className="text-[12px] font-semibold text-[#0f1117]">Ana Martínez</div>
-            <div className="text-[10px] text-[#6b7280]">Administrador</div>
-          </div>
-        )}
-      </div>
     </aside>
   );
 }

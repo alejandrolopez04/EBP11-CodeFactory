@@ -51,6 +51,11 @@ public class ProductRepositoryAdapter implements ProductRepositoryPort {
     }
 
     @Override
+    public void deleteById(Long id) {
+        productJpaRepository.deleteById(id);
+    }
+
+    @Override
     public boolean existsBySku(String sku) {
         return productJpaRepository.existsBySku(sku);
     }

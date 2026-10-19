@@ -3,6 +3,7 @@ package com.codefactory.pricing_dinamico.domain.model.entities;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -62,11 +63,37 @@ public class PricingRule {
         if (effectType == null) {
             throw new IllegalArgumentException("El tipo de efecto es obligatorio.");
         }
-        if (effectValue == null || effectValue.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("El valor del efecto debe ser mayor o igual a 0.");
+        if (effectValue == null) {
+            throw new IllegalArgumentException("El valor del efecto es obligatorio.");
         }
         this.effectType = effectType;
         this.effectValue = effectValue;
+    }
+
+    public void updateProducts(List<Integer> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            throw new IllegalArgumentException("Seleccione al menos un producto.");
+        }
+        this.productIds = new ArrayList<>(productIds);
+    }
+
+    public void removeProduct(Integer productId) {
+        if (productIds != null) {
+            productIds = productIds.stream()
+                    .filter(existingId -> !existingId.equals(productId))
+                    .toList();
+        }
+    }
+
+    public void updateValidity(LocalDateTime validFrom, LocalDateTime validTo) {
+        if ((validFrom == null) != (validTo == null)) {
+            throw new IllegalArgumentException("Defina la fecha de inicio y la fecha de fin de la vigencia.");
+        }
+        if (validFrom != null && !validFrom.isBefore(validTo)) {
+            throw new IllegalArgumentException("La fecha de fin debe ser posterior a la fecha de inicio de la vigencia.");
+        }
+        this.validFrom = validFrom;
+        this.validTo = validTo;
     }
 
     public void activate() {
@@ -155,6 +182,6 @@ public class PricingRule {
     }
 
     public Boolean isListEmpty() {
-        return productIds.isEmpty();
+        return productIds == null || productIds.isEmpty();
     }
 }

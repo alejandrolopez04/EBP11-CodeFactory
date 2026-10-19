@@ -22,12 +22,13 @@ interface PriceCalculationResult {
   calculatedAt: string;
 }
 
-import {API_URL} from "../api/client";
+import { API_URL } from "../api/client";
 
 const API_BASE = `${API_URL}/api`;
 
 const VARIABLE_TYPES: VariableType[] = ["DEMANDA", "DISPONIBILIDAD", "TEMPORAL"];
 const LEVELS: VariableLevel[] = ["CRITICO", "BAJO", "NORMAL", "ALTO"];
+// Solo las condiciones implementadas. Si el backend envía FIN_DE_SEMANA, será ignorado.
 const TIME_CONDITIONS: TimeConditionType[] = ["HORA_PICO", "TEMPORADA_ALTA"];
 
 export default function VariablesScreen() {
@@ -141,7 +142,7 @@ export default function VariablesScreen() {
 
             {form.variableType === "TEMPORAL" && (
               <div>
-                <label className="text-[12px] font-medium text-[#374151]">Condicion temporal</label>
+                <label className="text-[12px] font-medium text-[#374151]">Condición temporal</label>
                 <select
                   className="w-full border border-[#e2e6ed] rounded-[6px] px-3 py-2 text-[13px]"
                   value={form.timeCondition ?? ""}
@@ -170,16 +171,32 @@ export default function VariablesScreen() {
 
           <div className="mt-5">
             <h3 className="text-[13px] font-semibold text-[#374151] mb-2">Variables configuradas</h3>
-            <ul className="space-y-1">
-              {variables.map((v) => (
-                <li key={v.variableType} className="text-[12px] text-[#374151]">
-                  {v.variableType}: {v.level}{v.timeCondition ? ` (${v.timeCondition})` : ""}
-                </li>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              {variables.map((v) => {
+                // 🚨 FILTRO DE SEGURIDAD: Ignorar condiciones temporales no implementadas (como FIN_DE_SEMANA)
+                if (
+                  v.variableType === "TEMPORAL" &&
+                  v.timeCondition &&
+                  !TIME_CONDITIONS.includes(v.timeCondition)
+                ) {
+                  return null;
+                }
+
+                return (
+                  <span
+                    key={v.variableType}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#f8f9fb] border border-[#e2e6ed] rounded-full text-[12px] text-[#374151]"
+                  >
+                    <span className="font-semibold">{v.variableType}:</span> {v.level}
+                    {v.timeCondition ? ` (${v.timeCondition})` : ""}
+                  </span>
+                );
+              })}
+              
               {variables.length === 0 && (
-                <li className="text-[12px] text-[#9ca3af]">Aun no hay variables configuradas.</li>
+                <span className="text-[12px] text-[#9ca3af]">Aún no hay variables configuradas.</span>
               )}
-            </ul>
+            </div>
           </div>
         </div>
 
@@ -214,10 +231,10 @@ export default function VariablesScreen() {
               <p className="font-semibold">Precio final: {priceResult.finalPrice}</p>
               <p>Reglas aplicadas: {priceResult.appliedRuleIds.join(", ") || "ninguna"}</p>
               {priceResult.clampedToMax && (
-                <p className="text-amber-600">Se acoto al precio maximo del producto.</p>
+                <p className="text-amber-600">Se acotó al precio máximo del producto.</p>
               )}
               {priceResult.clampedToMin && (
-                <p className="text-amber-600">Se acoto al precio minimo del producto.</p>
+                <p className="text-amber-600">Se acotó al precio mínimo del producto.</p>
               )}
             </div>
           )}

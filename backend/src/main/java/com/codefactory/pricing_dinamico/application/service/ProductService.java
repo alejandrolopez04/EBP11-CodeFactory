@@ -2,27 +2,34 @@ package com.codefactory.pricing_dinamico.application.service;
 
 import com.codefactory.pricing_dinamico.application.port.in.ChangeProductStatusUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.CreateProductUseCase;
+import com.codefactory.pricing_dinamico.application.port.in.DeleteProductUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.GetAllProductsUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.UpdateProductUseCase;
 import com.codefactory.pricing_dinamico.application.port.out.ProductRepositoryPort;
+import com.codefactory.pricing_dinamico.application.port.out.RuleRepositoryPort;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductNotFoundException;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
 import com.codefactory.pricing_dinamico.domain.model.events.PricingInputsChangedEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 
 @Service
-public class ProductService implements CreateProductUseCase, GetAllProductsUseCase, ChangeProductStatusUseCase, UpdateProductUseCase {
+public class ProductService implements CreateProductUseCase, GetAllProductsUseCase, ChangeProductStatusUseCase, UpdateProductUseCase, DeleteProductUseCase {
     private final ProductRepositoryPort productRepositoryPort;
+    private final RuleRepositoryPort ruleRepositoryPort;
     private final ApplicationEventPublisher events;
 
-    public ProductService(ProductRepositoryPort productRepositoryPort, ApplicationEventPublisher events) {
+    public ProductService(ProductRepositoryPort productRepositoryPort,
+                           RuleRepositoryPort ruleRepositoryPort,
+                           ApplicationEventPublisher events) {
         this.productRepositoryPort = productRepositoryPort;
+        this.ruleRepositoryPort = ruleRepositoryPort;
         this.events = events;
     }
 
@@ -100,6 +107,24 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
     @Override
     public Product activateProduct(Long id) {
         return changeStatus(id, ProductStatus.ACTIVE);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProduct(Long id) {
+        productRepositoryPort.getProductById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+
+        List<com.codefactory.pricing_dinamico.domain.model.entities.PricingRule> affectedRules =
+                ruleRepositoryPort.getRules().stream()
+                        .filter(rule -> rule.getProductIds() != null && rule.getProductIds().contains(id.intValue()))
+                        .toList();
+
+        affectedRules.forEach(rule -> rule.removeProduct(id.intValue()));
+        if (!affectedRules.isEmpty()) {
+            ruleRepositoryPort.saveAll(affectedRules);
+        }
+        productRepositoryPort.deleteById(id);
     }
 
     private Product changeStatus(Long id, ProductStatus newStatus) {

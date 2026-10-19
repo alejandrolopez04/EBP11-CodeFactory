@@ -8,6 +8,7 @@ import {
   type ApiPricingRule,
 } from "../api/client";
 import RestrictedButton from "../auth/RestrictedButton";
+import { useProfile } from "../auth/ProfileContext";
 
 const VARIABLE_LABELS: Record<string, string> = {
   DEMANDA: "Demanda",
@@ -54,13 +55,13 @@ function formatDate(value?: string): string {
   });
 }
 
-function formatTime(value?: string): string {
-  if (!value) return "—";
-
-  return new Date(value).toLocaleTimeString("es-CO", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+/** Verifica si la regla está fuera de su rango de vigencia */
+function isOutOfRange(rule: ApiPricingRule): boolean {
+  if (!rule.validFrom || !rule.validTo) return false;
+  const now = new Date().getTime();
+  const from = new Date(rule.validFrom).getTime();
+  const to = new Date(rule.validTo).getTime();
+  return now < from || now > to;
 }
 
 export default function PricingRulesScreen() {
@@ -71,13 +72,29 @@ export default function PricingRulesScreen() {
   const [confirmRule, setConfirmRule] = useState<ApiPricingRule | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { canModify } = useProfile();
+  const [togglingStatusId, setTogglingStatusId] = useState<number | null>(null);
 
   const loadRules = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await fetchPricingRules();
-      setRules(data);
+
+      // 1. Detectar reglas activas que estén fuera de rango
+      const activeOutOfRange = data.filter((r) => r.ruleStatus === "ACTIVE" && isOutOfRange(r));
+
+      if (activeOutOfRange.length > 0) {
+        // Desactivar automáticamente en el backend
+        await Promise.all(activeOutOfRange.map((r) => deactivatePricingRule(r.id)));
+
+        // Volver a consultar para traer el estado actualizado
+        const updatedData = await fetchPricingRules();
+        setRules(updatedData);
+        setToast(`Se desactivaron automáticamente ${activeOutOfRange.length} regla(s) por estar fuera de vigencia.`);
+      } else {
+        setRules(data);
+      }
     } catch {
       setError("No se pudieron cargar las reglas de pricing.");
     } finally {
@@ -89,23 +106,27 @@ export default function PricingRulesScreen() {
     void loadRules();
   }, []);
 
-  const handleToggleStatus = async () => {
-    if (!confirmRule) return;
+  const handleToggleStatus = async (rule: ApiPricingRule) => {
+    // 2. Bloquear la activación si está fuera de rango
+    if (isOutOfRange(rule) && rule.ruleStatus !== "ACTIVE") {
+      setToast("No puedes activar esta regla porque está fuera de su rango de vigencia. Por favor, edita las fechas primero.");
+      return;
+    }
 
+    setTogglingStatusId(rule.id);
     try {
-      if (confirmRule.ruleStatus === "ACTIVE") {
-        await deactivatePricingRule(confirmRule.id);
+      if (rule.ruleStatus === "ACTIVE") {
+        await deactivatePricingRule(rule.id);
         setToast("Regla desactivada exitosamente.");
       } else {
-        await activatePricingRule(confirmRule.id);
+        await activatePricingRule(rule.id);
         setToast("Regla activada exitosamente.");
       }
-
-      setConfirmRule(null);
       await loadRules();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo cambiar el estado de la regla.");
-      setConfirmRule(null);
+    } finally {
+      setTogglingStatusId(null);
     }
   };
 
@@ -143,10 +164,10 @@ export default function PricingRulesScreen() {
                 <th className="w-[18%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Condición</th>
                 <th className="w-[10%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Efecto</th>
                 <th className="w-[12%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Desde</th>
-                <th className="w-[12%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Hasta</th>
+                <th className="w-[14%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Hasta</th>
                 <th className="w-[10%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Productos</th>
                 <th className="w-[12%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Estado</th>
-                <th className="w-[16%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Acciones</th>
+                <th className="w-[14%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px]">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -158,83 +179,69 @@ export default function PricingRulesScreen() {
                 </tr>
               )}
 
-              {rules.map((rule) => (
-                <tr key={rule.id} className="border-b border-[#f1f3f7] hover:bg-[#f8f9fb]">
-                  <td className="px-3 py-3 font-mono text-[12px] text-[#6b7280]">RGL-{String(rule.id).padStart(3, "0")}</td>
-                  <td className="px-3 py-3 text-[#374151]">{getConditionText(rule)}</td>
-                  <td className="px-3 py-3 text-center font-semibold text-[#16a34a]">{getEffectText(rule)}</td>
-                  <td className="px-3 py-3 text-center text-[#374151]">{formatDate(rule.validFrom)}</td>
-                  <td className="px-3 py-3 text-center text-[#374151]">{formatDate(rule.validTo)}</td>
-                  <td className="px-3 py-3 text-center text-[#374151]">{rule.productIds?.length ?? 0}</td>
-                  <td className="px-3 py-3 text-center">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                      rule.ruleStatus === "ACTIVE"
-                        ? "bg-[#dcfce7] text-[#16a34a]"
-                        : "bg-[#f1f3f7] text-[#9ca3af]"
-                    }`}>
-                      {rule.ruleStatus === "ACTIVE" ? "Activa" : "Inactiva"}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <RestrictedButton
-                        onClick={() => {
-                          setEditingRule(rule);
-                          setShowModal(true);
-                        }}
-                        className="px-2 py-1 rounded-[4px] text-[11px] font-semibold text-[#1a56db] hover:bg-[#e8f0fd]"
-                      >
-                        Editar
-                      </RestrictedButton>
+              {rules.map((rule) => {
+                const outOfRange = isOutOfRange(rule);
 
-                      <RestrictedButton
-                        onClick={() => setConfirmRule(rule)}
-                        className={`px-2 py-1 rounded-[4px] text-[11px] font-semibold ${
-                          rule.ruleStatus === "ACTIVE"
-                            ? "text-[#dc2626] hover:bg-[#fef2f2]"
-                            : "text-[#16a34a] hover:bg-[#dcfce7]"
-                        }`}
-                      >
-                        {rule.ruleStatus === "ACTIVE" ? "Desactivar" : "Activar"}
-                      </RestrictedButton>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                return (
+                  <tr key={rule.id} className="border-b border-[#f1f3f7] hover:bg-[#f8f9fb]">
+                    <td className="px-3 py-3 font-mono text-[12px] text-[#6b7280]">RGL-{String(rule.id).padStart(3, "0")}</td>
+                    <td className="px-3 py-3 text-[#374151]">{getConditionText(rule)}</td>
+                    <td className="px-3 py-3 text-center font-semibold text-[#16a34a]">{getEffectText(rule)}</td>
+                    <td className="px-3 py-3 text-center text-[#374151]">{formatDate(rule.validFrom)}</td>
+
+                    {/* 3. Aviso visual de fuera de rango */}
+                    <td className="px-3 py-3 text-center text-[#374151]">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <span>{formatDate(rule.validTo)}</span>
+                        {outOfRange && (
+                          <span className="text-[9px] font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] px-1.5 py-0.5 rounded uppercase tracking-wide">
+                            Fuera de rango
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="px-3 py-3 text-center text-[#374151]">{rule.productIds?.length ?? 0}</td>
+
+                    <td className="px-3 py-3 text-center">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                        rule.ruleStatus === "ACTIVE"
+                          ? "bg-[#dcfce7] text-[#16a34a]"
+                          : "bg-[#f1f3f7] text-[#9ca3af]"
+                      }`}>
+                        {rule.ruleStatus === "ACTIVE" ? "Activa" : "Inactiva"}
+                      </span>
+                    </td>
+
+                    <td className="px-3 py-3 text-center">
+                      <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                        <RestrictedButton
+                          onClick={() => {
+                            setEditingRule(rule);
+                            setShowModal(true);
+                          }}
+                          className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors"
+                          title="Editar"
+                        >
+                          <EditIcon />
+                        </RestrictedButton>
+
+                          <div className="w-px h-5 bg-[#e2e6ed] mx-0.5" />
+
+                          <span title={!canModify ? "Solo disponible para administradores" : undefined}>
+                              <ToggleSwitch
+                                  checked={rule.ruleStatus === "ACTIVE"}
+                                  onChange={() => handleToggleStatus(rule)}
+                                  disabled={!canModify || togglingStatusId === rule.id}
+                              />
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {confirmRule && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[10px] border border-[#e2e6ed] w-full max-w-sm shadow-xl p-6">
-            <h3 className="text-[15px] font-bold text-[#0f1117] mb-2">
-              ¿Deseas {confirmRule.ruleStatus === "ACTIVE" ? "desactivar" : "activar"} esta regla?
-            </h3>
-            <p className="text-[13px] text-[#6b7280] mb-5">
-              {confirmRule.ruleStatus === "ACTIVE"
-                ? "La regla dejará de aplicarse en los próximos cálculos, pero conservará su configuración."
-                : "La regla volverá a evaluarse en los próximos cálculos de precio."}
-            </p>
-
-            <div className="flex gap-3 justify-end">
-              <RestrictedButton
-                onClick={() => setConfirmRule(null)}
-                className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px]"
-              >
-                Cancelar
-              </RestrictedButton>
-              <RestrictedButton
-                onClick={handleToggleStatus}
-                className={`px-4 py-2 text-[13px] font-semibold text-white rounded-[6px] ${
-                  confirmRule.ruleStatus === "ACTIVE" ? "bg-[#dc2626]" : "bg-[#16a34a]"
-                }`}
-              >
-                {confirmRule.ruleStatus === "ACTIVE" ? "Desactivar" : "Activar"}
-              </RestrictedButton>
-            </div>
-          </div>
         </div>
       )}
 
@@ -251,5 +258,46 @@ export default function PricingRulesScreen() {
 
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Componentes de Íconos y Switch                                     */
+/* ------------------------------------------------------------------ */
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      disabled={disabled}
+      className={`relative inline-flex items-center w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
+        checked ? "bg-[#16a34a]" : "bg-[#9ca3af]"
+      }`}
+    >
+      <span
+        className={`inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+          checked ? "translate-x-[18px]" : "translate-x-[3px]"
+        }`}
+      />
+    </button>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <path d="M11 2l3 3-8 8H3v-3l8-8z" />
+    </svg>
   );
 }

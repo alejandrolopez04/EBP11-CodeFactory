@@ -50,8 +50,6 @@ interface RuleFormModalProps {
   onSaved?: (message: string) => void | Promise<void>;
 }
 
-const pad = (value: number) => String(value).padStart(2, "0");
-
 function toLocalInput(value?: string): string {
   if (!value) return "";
   return value.slice(0, 16);
@@ -75,6 +73,7 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 1. Cargar todos los productos para el buscador
   useEffect(() => {
     apiFetch(PRODUCTS_API_URL)
       .then((response) => response.json())
@@ -82,6 +81,7 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
       .catch(() => setError("No se pudieron cargar los productos."));
   }, []);
 
+  // 2. Precargar datos si estamos editando
   useEffect(() => {
     if (!editingRule) return;
 
@@ -95,13 +95,20 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
     setEffectValue(String(editingRule.effectValue));
     setValidFrom(toLocalInput(editingRule.validFrom));
     setValidTo(toLocalInput(editingRule.validTo));
-  }, [editingRule]);
+
+    // NOTA: Si tu ApiPricingRule trae los productos como un array de IDs (productIds)
+    // filtramos "allProducts" para mostrarlos en las etiquetas.
+    // Si el backend te trae el objeto completo, puedes asignarlo directo.
+    if (editingRule.productIds && allProducts.length > 0) {
+      const ruleProducts = allProducts.filter(p => editingRule.productIds?.includes(p.id));
+      setSelectedProducts(ruleProducts);
+    }
+  }, [editingRule, allProducts]); // Incluimos allProducts para que espere a que carguen
 
   const currentConfig = VARIABLE_CONFIG[variableType];
 
   const suggestions = useMemo(() => {
     if (!search.trim()) return [];
-
     const selectedIds = new Set(selectedProducts.map((product) => product.id));
 
     return allProducts
@@ -117,46 +124,41 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
   const handleSubmit = async () => {
     setError(null);
 
-    if (!effectValue || Number(effectValue) < 0) {
-      setError("El valor del efecto debe ser mayor o igual a 0.");
+    if (!effectValue || !Number.isFinite(Number(effectValue))) {
+      setError("El valor del efecto debe ser un número válido.");
+      return;
+    }
+
+    if (selectedProducts.length === 0) {
+      setError("Selecciona al menos un producto.");
+      return;
+    }
+
+    if (!validFrom || !validTo || new Date(validFrom) >= new Date(validTo)) {
+      setError("La fecha Desde debe ser anterior a la fecha Hasta.");
       return;
     }
 
     setLoading(true);
 
     try {
-      if (isEditing && editingRule) {
-        await updatePricingRule(editingRule.id, {
-          variableType,
-          level: variableType === "TEMPORAL" ? undefined : conditionValue as ApiPricingRule["level"],
-          timeCondition: variableType === "TEMPORAL" ? conditionValue as ApiPricingRule["timeCondition"] : undefined,
-          effectType,
-          effectValue: Number(effectValue),
-        });
+      // Payload unificado para Crear y Editar
+      const payload = {
+        variableType,
+        level: variableType === "TEMPORAL" ? undefined : conditionValue as ApiPricingRule["level"],
+        timeCondition: variableType === "TEMPORAL" ? conditionValue as ApiPricingRule["timeCondition"] : undefined,
+        effectType,
+        effectValue: Number(effectValue),
+        productIds: selectedProducts.map((product) => product.id),
+        validFrom,
+        validTo,
+      };
 
+      if (isEditing && editingRule) {
+        // Aseguramos que updatePricingRule acepte estos campos (esto se ajusta en api/client.ts si es necesario)
+        await updatePricingRule(editingRule.id, payload);
         await onSaved?.("Regla actualizada exitosamente.");
       } else {
-        if (selectedProducts.length === 0) {
-          setError("Selecciona al menos un producto.");
-          return;
-        }
-
-        if (!validFrom || !validTo || new Date(validFrom) >= new Date(validTo)) {
-          setError("La fecha Desde debe ser anterior a la fecha Hasta.");
-          return;
-        }
-
-        const payload: Record<string, unknown> = {
-          variableType,
-          effectType,
-          effectValue: Number(effectValue),
-          productIds: selectedProducts.map((product) => product.id),
-          validFrom,
-          validTo,
-        };
-
-        payload[currentConfig.field] = conditionValue;
-
         const response = await apiFetch(RULES_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -196,9 +198,9 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
         )}
 
         <div className="px-6 py-5 space-y-6">
+          {/* SECCIÓN CONDICIÓN */}
           <section>
             <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Condición</h3>
-
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-[#374151] mb-1">Variable</label>
@@ -216,7 +218,6 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
                   ))}
                 </select>
               </div>
-
               <div>
                 <label className="block text-[11px] font-semibold text-[#374151] mb-1">Valor</label>
                 <select
@@ -232,9 +233,9 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
             </div>
           </section>
 
+          {/* SECCIÓN EFECTO */}
           <section>
             <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Efecto</h3>
-
             <div className="flex gap-3">
               <div className="w-40">
                 <label className="block text-[11px] font-semibold text-[#374151] mb-1">Tipo</label>
@@ -247,12 +248,10 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
                   <option value="VALOR">Monto fijo</option>
                 </select>
               </div>
-
               <div className="flex-1">
                 <label className="block text-[11px] font-semibold text-[#374151] mb-1">Valor</label>
                 <input
                   type="number"
-                  min="0"
                   value={effectValue}
                   onChange={(event) => setEffectValue(event.target.value)}
                   className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
@@ -261,89 +260,87 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
             </div>
           </section>
 
-          {!isEditing && (
-            <section>
-              <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Vigencia</h3>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#374151] mb-1">Desde</label>
-                  <input
-                    type="datetime-local"
-                    value={validFrom}
-                    onChange={(event) => setValidFrom(event.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#374151] mb-1">Hasta</label>
-                  <input
-                    type="datetime-local"
-                    value={validTo}
-                    onChange={(event) => setValidTo(event.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
-                  />
-                </div>
-              </div>
-            </section>
-          )}
-
-          {!isEditing && (
-            <section>
-              <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Productos asociados</h3>
-
-              <div className="border border-[#e2e6ed] rounded-[6px] p-3">
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {selectedProducts.map((product) => (
-                    <span key={product.id} className="px-2 py-0.5 bg-[#e8f0fd] text-[#1a56db] text-[11px] rounded-full">
-                      {product.name}
-                      <button
-                        onClick={() =>
-                          setSelectedProducts((previous) =>
-                            previous.filter((item) => item.id !== product.id)
-                          )
-                        }
-                        className="ml-1"
-                      >
-                        x
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
+          {/* SECCIÓN VIGENCIA (Ahora siempre visible y editable) */}
+          <section>
+            <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Vigencia</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#374151] mb-1">Desde</label>
                 <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar por nombre o SKU..."
-                  className="w-full text-[13px] border border-[#e2e6ed] rounded-[6px] px-3 py-2"
+                  type="datetime-local"
+                  value={validFrom}
+                  onChange={(event) => setValidFrom(event.target.value)}
+                  className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
                 />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-[#374151] mb-1">Hasta</label>
+                <input
+                  type="datetime-local"
+                  value={validTo}
+                  onChange={(event) => setValidTo(event.target.value)}
+                  className="w-full px-3 py-2 text-[13px] border border-[#e2e6ed] rounded-[6px]"
+                />
+              </div>
+            </div>
+          </section>
 
-                {suggestions.length > 0 && (
-                  <div className="mt-1 bg-white border border-[#e2e6ed] rounded-[6px] max-h-40 overflow-y-auto">
-                    {suggestions.map((product) => (
-                      <button
-                        key={product.id}
-                        onClick={() => {
-                          setSelectedProducts((previous) => [...previous, product]);
-                          setSearch("");
-                        }}
-                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f1f3f7]"
-                      >
-                        {product.name}
-                      </button>
-                    ))}
-                  </div>
+          {/* SECCIÓN PRODUCTOS (Ahora siempre visible y editable) */}
+          <section>
+            <h3 className="text-[11px] font-bold text-[#6b7280] uppercase mb-3">Productos asociados</h3>
+            <div className="border border-[#e2e6ed] rounded-[6px] p-3">
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {selectedProducts.map((product) => (
+                  <span key={product.id} className="px-2 py-0.5 bg-[#e8f0fd] text-[#1a56db] text-[11px] rounded-full flex items-center">
+                    {product.name}
+                    <button
+                      onClick={() =>
+                        setSelectedProducts((previous) =>
+                          previous.filter((item) => item.id !== product.id)
+                        )
+                      }
+                      className="ml-1.5 font-bold hover:text-[#dc2626]"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {selectedProducts.length === 0 && (
+                  <span className="text-[12px] text-[#9ca3af]">Ningún producto seleccionado</span>
                 )}
               </div>
-            </section>
-          )}
+
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Buscar por nombre o SKU..."
+                className="w-full text-[13px] border border-[#e2e6ed] rounded-[6px] px-3 py-2"
+              />
+
+              {suggestions.length > 0 && (
+                <div className="mt-1 bg-white border border-[#e2e6ed] rounded-[6px] max-h-40 overflow-y-auto">
+                  {suggestions.map((product) => (
+                    <button
+                      key={product.id}
+                      onClick={() => {
+                        setSelectedProducts((previous) => [...previous, product]);
+                        setSearch("");
+                      }}
+                      className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f1f3f7] border-b border-[#f1f3f7] last:border-0"
+                    >
+                      {product.name} <span className="text-[#9ca3af] text-[11px] ml-2">{product.sku}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
         </div>
 
         <div className="px-6 py-4 border-t border-[#e2e6ed] flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px]"
+            className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px] hover:bg-[#f1f3f7] transition-colors"
           >
             Cancelar
           </button>
@@ -351,7 +348,7 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-4 py-2 text-[13px] font-semibold bg-[#1a56db] text-white rounded-[6px] disabled:opacity-50"
+            className="px-4 py-2 text-[13px] font-semibold bg-[#1a56db] text-white rounded-[6px] disabled:opacity-50 hover:bg-[#1648c0] transition-colors"
           >
             {loading ? "Guardando..." : isEditing ? "Guardar cambios" : "Crear regla"}
           </button>

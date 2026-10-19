@@ -227,7 +227,6 @@ export default function BusinessVariablesScreen() {
                     summary={
                         <div className="flex flex-wrap gap-2">
                             <Badge label={`Hora pico: ${variables.schedule.morningStartTime}–${variables.schedule.morningEndTime}, ${variables.schedule.afternoonStartTime}–${variables.schedule.afternoonEndTime}`} />
-                            <Badge label="Fin de semana: Sáb–Dom" />
                             <Badge label={`Temporada alta: ${variables.highSeasonMonths.join(", ") || "sin meses"}`} />
                         </div>
                     }

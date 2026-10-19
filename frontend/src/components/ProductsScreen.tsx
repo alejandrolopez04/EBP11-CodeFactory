@@ -10,7 +10,7 @@ function fmt(n: number) {
   return "$" + n.toLocaleString("es-CL");
 }
 
-export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => void }) {
+export default function ProductsScreen({ onViewDetail }: { onViewDetail: (productId: number) => void }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [showModal, setShowModal] = useState(false);
@@ -150,7 +150,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: () => v
                         </td>
                         <td className="px-3 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <button onClick={onViewDetail} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver detalle">
+                            <button onClick={() => onViewDetail(p.id)} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver detalle">
                               <EyeIcon />
                             </button>
                             <button

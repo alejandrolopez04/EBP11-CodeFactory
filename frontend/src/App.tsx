@@ -13,6 +13,7 @@ export type Screen = "dashboard" | "products" | "rules" | "variables" | "history
 
 export default function App() {
     const [activeScreen, setActiveScreen] = useState<Screen>("products");
+    const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
     
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -29,11 +30,11 @@ export default function App() {
                     
                     <main className="flex-1 overflow-auto">
                         {activeScreen === "dashboard" && <DashboardScreen />}
-                        {activeScreen === "products" && <ProductsScreen onViewDetail={() => setActiveScreen("product-detail")} />}
+                        {activeScreen === "products" && <ProductsScreen onViewDetail={(id) => { setSelectedProductId(id); setActiveScreen("product-detail"); }} />}
                         {activeScreen === "rules" && <PricingRulesScreen />}
                         {activeScreen === "variables" && <BusinessVariablesScreen />}
                         {activeScreen === "history" && <PriceHistoryScreen />}
-                        {activeScreen === "product-detail" && <ProductDetailScreen onBack={() => setActiveScreen("products")} />}
+                        {activeScreen === "product-detail" && <ProductDetailScreen productId={selectedProductId} onBack={() => setActiveScreen("products")} />}
                     </main>
                 </div>
             </AppGate>

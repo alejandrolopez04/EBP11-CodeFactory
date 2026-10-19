@@ -133,9 +133,6 @@ export default function DashboardScreen() {
                                         <span className="ml-1.5 text-[11px] font-medium">
                                              {arrow} {diff !== 0 && `${Math.abs(pct).toFixed(1)}%`}
                                         </span>
-                                        <span className="ml-1.5 text-[11px] font-medium">
-                                            {arrow} {diff !== 0 && `${Math.abs(pct).toFixed(1)}%`}
-                                        </span>
                                         <span className="ml-1.5">{fmt(u.finalPrice)}</span>
                                     </td>
                                     <td className="px-4 py-2.5 text-[#374151]">{u.trigger}</td>

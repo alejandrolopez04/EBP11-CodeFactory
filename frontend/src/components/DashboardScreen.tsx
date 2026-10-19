@@ -125,15 +125,15 @@ export default function DashboardScreen() {
                                         {u.previousPrice !== null ? fmt(u.previousPrice) : "—"}
                                     </td>
                                     <td className={`px-4 py-2.5 text-right font-semibold whitespace-nowrap ${color}`}>
-                                        {fmt(u.finalPrice)}
-                                        <span className="ml-1.5 text-[11px] font-medium">
-    {arrow} {diff !== 0 && `${Math.abs(pct).toFixed(1)}%`}
-  </span>
                                         {(u.clampedToMax || u.clampedToMin) && (
                                             <span className="ml-1.5 text-[11px] font-medium text-[#b45309]">
-      {u.clampedToMax ? "(tope máx.)" : "(tope mín.)"}
-    </span>
+            {u.clampedToMax ? "(tope máx.)" : "(tope mín.)"}
+        </span>
                                         )}
+                                        <span className="ml-1.5 text-[11px] font-medium">
+        {arrow} {diff !== 0 && `${Math.abs(pct).toFixed(1)}%`}
+    </span>
+                                        {fmt(u.finalPrice)}
                                     </td>
                                     <td className="px-4 py-2.5 text-[#374151]">{u.trigger}</td>
                                     <td className="px-4 py-2.5 text-[#6b7280] whitespace-nowrap">{fmtTime(u.at)}</td>

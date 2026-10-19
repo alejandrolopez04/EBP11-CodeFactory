@@ -33,28 +33,19 @@ export interface UpdatePricingRulePayload {
   timeCondition?: ApiPricingRule["timeCondition"];
   effectType: ApiPricingRule["effectType"];
   effectValue: number;
+  productIds: number[];
+  validFrom: string;
+  validTo: string;
 }
 
 export async function updatePricingRule(
   id: number,
   payload: UpdatePricingRulePayload
 ): Promise<ApiPricingRule> {
-  const params = new URLSearchParams({
-    variableType: payload.variableType,
-    effectType: payload.effectType,
-    effectValue: String(payload.effectValue),
-  });
-
-  if (payload.level) {
-    params.append("level", payload.level);
-  }
-
-  if (payload.timeCondition) {
-    params.append("timeCondition", payload.timeCondition);
-  }
-
-  const response = await fetch(`${PRICING_RULES_MANAGEMENT_URL}/${id}?${params.toString()}`, {
+  const response = await fetch(`${PRICING_RULES_MANAGEMENT_URL}/${id}`, {
     method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {

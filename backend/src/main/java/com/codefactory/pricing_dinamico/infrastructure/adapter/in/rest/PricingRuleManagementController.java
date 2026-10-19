@@ -2,20 +2,14 @@ package com.codefactory.pricing_dinamico.infrastructure.adapter.in.rest;
 
 import com.codefactory.pricing_dinamico.application.port.in.ChangePricingRuleStatusUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.UpdatePricingRuleUseCase;
-import com.codefactory.pricing_dinamico.domain.model.entities.EffectType;
 import com.codefactory.pricing_dinamico.domain.model.entities.PricingRule;
-import com.codefactory.pricing_dinamico.domain.model.entities.TimeConditionType;
-import com.codefactory.pricing_dinamico.domain.model.entities.VariableLevel;
-import com.codefactory.pricing_dinamico.domain.model.entities.VariableType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/pricing-rules-management")
@@ -32,19 +26,18 @@ public class PricingRuleManagementController {
 
     @PutMapping("/{id}")
     public ResponseEntity<PricingRule> updateRule(@PathVariable Long id,
-                                                  @RequestParam VariableType variableType,
-                                                  @RequestParam(required = false) VariableLevel level,
-                                                  @RequestParam(required = false) TimeConditionType timeCondition,
-                                                  @RequestParam EffectType effectType,
-                                                  @RequestParam BigDecimal effectValue) {
+                              @RequestBody UpdatePricingRuleRequest request) {
 
         PricingRule updatedRule = updatePricingRuleUseCase.updateRule(
                 id,
-                variableType,
-                level,
-                timeCondition,
-                effectType,
-                effectValue
+            request.variableType(),
+            request.level(),
+            request.timeCondition(),
+            request.effectType(),
+            request.effectValue(),
+            request.productIds(),
+            request.validFrom(),
+            request.validTo()
         );
 
         return ResponseEntity.ok(updatedRule);

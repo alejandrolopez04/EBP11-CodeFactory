@@ -58,7 +58,7 @@ function effectText(rule: ApiPricingRule): string {
 
 const isExpired = (rule: ApiPricingRule) => !!rule.validTo && new Date(rule.validTo) <= new Date();
 
-/** El backend solo permite priorizar reglas activas; las vencidas ya no se aplican. */
+/** Determina si una regla está habilitada para aplicar en el cálculo */
 const isPrioritizable = (rule: ApiPricingRule) => rule.ruleStatus === "ACTIVE" && !isExpired(rule);
 
 const byPriority = (a: ApiPricingRule, b: ApiPricingRule) =>
@@ -72,16 +72,18 @@ function SortableRuleRow({
   rule,
   position,
   met,
+  isInactive,
   disabled,
 }: {
   rule: ApiPricingRule;
   position: number;
   met: boolean;
+  isInactive: boolean;
   disabled: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rule.id,
-    disabled,
+    disabled, // Solo se deshabilita si está guardando en el backend (saving)
   });
 
   const style: CSSProperties = {
@@ -94,19 +96,21 @@ function SortableRuleRow({
   };
 
   const colorClass = !met ? "text-[#9ca3af]" : rule.effectValue >= 0 ? "text-[#16a34a]" : "text-[#dc2626]";
+  
+  // Las reglas que no aplican tienen una opacidad un poco más baja y fondo grisáceo sutil
+  const rowOpacity = isInactive ? "opacity-60 bg-[#fafafa] hover:bg-[#f4f5f7]" : "hover:bg-[#f8f9fb]";
 
   return (
     <tr
       ref={setNodeRef}
       style={style}
-      className="border-b border-[#f1f3f7] last:border-b-0 hover:bg-[#f8f9fb] transition-colors"
+      className={`border-b border-[#f1f3f7] last:border-b-0 transition-colors ${rowOpacity}`}
     >
       <td className="pl-3 pr-1 py-3 w-8">
         <button
           type="button"
           {...attributes}
           {...listeners}
-          disabled={disabled}
           aria-label="Reordenar regla"
           className="cursor-grab active:cursor-grabbing disabled:opacity-40 text-[#9ca3af] hover:text-[#1a56db] p-1 rounded transition-colors touch-none"
         >
@@ -120,9 +124,16 @@ function SortableRuleRow({
           </svg>
         </button>
       </td>
-      <td className="px-3 py-3 w-12 font-mono text-[12px] text-[#6b7280]">{position}</td>
-            <td className="px-3 py-3 font-medium text-[#0f1117]">
+      <td className="px-3 py-3 w-12 font-mono text-[12px] text-[#6b7280]">
+        {position}
+      </td>
+      <td className="px-3 py-3 font-medium text-[#0f1117]">
         RGL-{String(rule.id).padStart(3, "0")}
+        {isInactive && (
+          <span className="ml-2 text-[10px] text-gray-500 font-normal border border-gray-200 bg-gray-100 px-1.5 py-0.5 rounded">
+            No Aplica
+          </span>
+        )}
       </td>
       <td className="px-3 py-3 w-[26%]">
         <code className="font-mono text-[11px] text-[#6b7280]">{conditionText(rule)}</code>
@@ -192,11 +203,12 @@ export default function ProductDetailScreen({
     void load();
   }, [load]);
 
-  const sortable = useMemo(() => rules.filter(isPrioritizable).sort(byPriority), [rules]);
-  const others = useMemo(() => rules.filter((r) => !isPrioritizable(r)), [rules]);
+  // Unificamos TODAS las reglas en un solo arreglo ordenado
+  const sortedRules = useMemo(() => [...rules].sort(byPriority), [rules]);
+
+  // Reglas que el motor aplicó (para el desglose y el check)
   const applied = useMemo(() => new Set(calc?.appliedRuleIds ?? []), [calc]);
-  // reglas que se aplicaron, en el orden en que el motor las aplica
-  const appliedInOrder = useMemo(() => sortable.filter((r) => applied.has(r.id)), [sortable, applied]);
+  const appliedInOrder = useMemo(() => sortedRules.filter((r) => applied.has(r.id)), [sortedRules, applied]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -206,15 +218,16 @@ export default function ProductDetailScreen({
   const handleDragEnd = async ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id || saving || productId == null) return;
 
-    const oldIndex = sortable.findIndex((r) => r.id === active.id);
-    const newIndex = sortable.findIndex((r) => r.id === over.id);
-    const reordered = arrayMove(sortable, oldIndex, newIndex);
+    const oldIndex = sortedRules.findIndex((r) => r.id === active.id);
+    const newIndex = sortedRules.findIndex((r) => r.id === over.id);
+    const reordered = arrayMove(sortedRules, oldIndex, newIndex);
 
     // Se reasignan los mismos números de prioridad que ya tenían estas reglas al nuevo orden.
-    // Así no chocan con reglas de otros productos (una regla puede estar en varios productos).
-    const current = sortable.map((r) => r.priority);
+    const current = sortedRules.map((r) => r.priority);
     const canReuse = current.every((p) => p != null) && new Set(current).size === current.length;
     const slots = canReuse ? [...(current as number[])].sort((a, b) => a - b) : reordered.map((_, i) => i + 1);
+    
+    // El payload ahora envía TODAS las reglas (incluso las inactivas) con su nueva prioridad
     const payload = reordered.map((r, i) => ({ ruleId: r.id, priority: slots[i] }));
 
     const previous = rules;
@@ -274,7 +287,7 @@ export default function ProductDetailScreen({
             <span className="font-mono text-[12px] text-[#9ca3af] mt-0.5 block">SKU: {product.sku}</span>
           </div>
 
-          {/* Precio */}
+          {/* Precio y Desglose */}
           <div className="bg-white border border-[#e2e6ed] rounded-[10px] p-6 mb-5">
             <div className="flex gap-8">
               <div>
@@ -297,24 +310,34 @@ export default function ProductDetailScreen({
               </div>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-[#f1f3f7] flex items-center gap-2 flex-wrap text-[13px] text-[#374151]">
+            {/* DESGLOSE DEL CÁLCULO - CON ID Y FLEX-WRAP */}
+            <div className="mt-5 pt-4 border-t border-[#f1f3f7] flex flex-wrap items-center gap-2 text-[13px] text-[#374151]">
               <span className="font-mono text-[#6b7280]">{fmt(basePrice)}</span>
               <span className="text-[#9ca3af]">base</span>
+              
               {appliedInOrder.map((rule) => (
-                <span key={rule.id} className="inline-flex items-center gap-1.5">
-                  <span className={`font-mono ${rule.effectValue >= 0 ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
+                <span 
+                  key={rule.id} 
+                  className="inline-flex items-center gap-1.5 bg-[#f8f9fb] px-1.5 py-1 rounded border border-[#e2e6ed]"
+                  title={conditionText(rule)}
+                >
+                  <span className={`font-mono font-bold ${rule.effectValue >= 0 ? "text-[#16a34a]" : "text-[#dc2626]"}`}>
                     {effectText(rule)}
                   </span>
-                  <span className="text-[#9ca3af] text-[11px]">{conditionText(rule).toLowerCase()}</span>
+                  <span className="text-[#6b7280] text-[10px] uppercase font-bold tracking-wider">
+                    RGL-{String(rule.id).padStart(3, "0")}
+                  </span>
                 </span>
               ))}
-              <span className="text-[#9ca3af] mx-2">=</span>
-              <span className="font-mono font-bold text-[#1a56db]">{fmt(finalPrice)}</span>
+              
+              <span className="text-[#9ca3af] mx-1">=</span>
+              <span className="font-mono font-bold text-[15px] text-[#1a56db]">{fmt(finalPrice)}</span>
             </div>
-            {calc?.summary && <p className="mt-2 text-[11px] text-[#9ca3af]">{calc.summary}</p>}
+            
+            {calc?.summary && <p className="mt-3 text-[11px] text-[#9ca3af]">{calc.summary}</p>}
           </div>
 
-          {/* Reglas priorizables */}
+          {/* TABLA UNIFICADA (TODAS LAS REGLAS) */}
           <div className="bg-white border border-[#e2e6ed] rounded-[8px] overflow-hidden mb-5">
             <div className="px-5 py-3 border-b border-[#e2e6ed] bg-[#f8f9fb] flex items-center justify-between">
               <h2 className="text-[12px] font-bold text-[#374151] font-display uppercase tracking-wide">
@@ -325,7 +348,7 @@ export default function ProductDetailScreen({
               </span>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={sortable.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext items={sortedRules.map((r) => r.id)} strategy={verticalListSortingStrategy}>
                 <table className="w-full text-[13px] table-fixed">
                   <thead>
                     <tr className="border-b border-[#f1f3f7] text-[11px] uppercase tracking-wide text-[#6b7280]">
@@ -338,20 +361,23 @@ export default function ProductDetailScreen({
                     </tr>
                   </thead>
                   <tbody>
-                    {sortable.length === 0 && (
+                    {sortedRules.length === 0 && (
                       <tr>
                         <td colSpan={6} className="px-3 py-8 text-center text-[#6b7280]">
-                          Este producto no tiene reglas activas para priorizar.
+                          Este producto no tiene reglas asociadas.
                         </td>
                       </tr>
                     )}
-                    {sortable.map((rule, i) => (
+                    
+                    {/* Renderizamos TODAS las reglas por igual, con su índice natural */}
+                    {sortedRules.map((rule, i) => (
                       <SortableRuleRow
                         key={rule.id}
                         rule={rule}
                         position={i + 1}
                         met={applied.has(rule.id)}
-                        disabled={saving}
+                        isInactive={!isPrioritizable(rule)}
+                        disabled={saving} // Solo se bloquea si está guardando
                       />
                     ))}
                   </tbody>
@@ -359,17 +385,6 @@ export default function ProductDetailScreen({
               </SortableContext>
             </DndContext>
           </div>
-
-          {others.length > 0 && (
-            <div className="bg-white border border-[#e2e6ed] rounded-[8px] px-5 py-3 text-[12px] text-[#6b7280]">
-              <div className="font-semibold text-[#374151] mb-1">Fuera de la priorización (inactivas o vencidas)</div>
-              {others.map((r) => (
-                <div key={r.id}>
-                  RGL-{String(r.id).padStart(3, "0")} · {conditionText(r)} · {isExpired(r) ? "Vencida" : "Inactiva"}
-                </div>
-              ))}
-            </div>
-          )}
         </>
       )}
 

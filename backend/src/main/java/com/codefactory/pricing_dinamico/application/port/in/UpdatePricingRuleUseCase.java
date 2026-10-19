@@ -7,6 +7,8 @@ import com.codefactory.pricing_dinamico.domain.model.entities.VariableLevel;
 import com.codefactory.pricing_dinamico.domain.model.entities.VariableType;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 public interface UpdatePricingRuleUseCase {
     PricingRule updateRule(Long ruleId,
@@ -14,5 +16,8 @@ public interface UpdatePricingRuleUseCase {
                            VariableLevel level,
                            TimeConditionType timeCondition,
                            EffectType effectType,
-                           BigDecimal effectValue);
+                           BigDecimal effectValue,
+                           List<Integer> productIds,
+                           LocalDateTime validFrom,
+                           LocalDateTime validTo);
 }

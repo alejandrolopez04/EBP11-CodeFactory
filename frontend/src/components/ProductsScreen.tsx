@@ -27,6 +27,9 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
   // Producto pendiente por confirmar eliminación
   const [productToDelete, setProductToDelete] = useState<ApiProduct | null>(null);
 
+  // Producto cuyo switch de estado está en proceso (para deshabilitar doble clic)
+  const [togglingStatusId, setTogglingStatusId] = useState<number | null>(null);
+
   const loadProducts = useCallback(async () => {
     try {
       const res = await fetch(PRODUCTS_API_URL);
@@ -59,6 +62,39 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
     setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
     setToast(`Producto "${productToDelete.name}" eliminado`);
     setProductToDelete(null);
+  };
+
+  // Función que activa / desactiva un producto
+  const handleToggleStatus = async (product: ApiProduct) => {
+    const isCurrentlyActive = product.productStatus === "ACTIVE";
+    const newStatus = isCurrentlyActive ? "INACTIVE" : "ACTIVE";
+
+    setTogglingStatusId(product.id);
+
+    try {
+      // 🔴 MODO MOCK — actualización local optimista.
+      // Cuando el endpoint esté listo, reemplaza este bloque por el fetch:
+      //
+      // const res = await fetch(`${PRODUCTS_API_URL}/${product.id}/status`, {
+      //   method: "PATCH",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ productStatus: newStatus }),
+      // });
+      // if (!res.ok) throw new Error();
+
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === product.id ? { ...p, productStatus: newStatus } : p
+        )
+      );
+      setToast(
+        `Producto "${product.name}" ${newStatus === "ACTIVE" ? "activado" : "desactivado"} exitosamente`
+      );
+    } catch {
+      setToast("No se pudo actualizar el estado del producto");
+    } finally {
+      setTogglingStatusId(null);
+    }
   };
 
   return (
@@ -117,16 +153,18 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
                 <table className="w-full text-[13px] table-fixed min-w-[1200px]">
                   <thead>
                   <tr className="border-b border-[#e2e6ed] bg-[#f8f9fb]">
+                    {/* Ajuste de porcentajes para darle más espacio a Acciones */}
                     <th className="w-[9%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">SKU</th>
-                    <th className="w-[18%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Nombre</th>
-                    <th className="w-[11%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Categoría</th>
+                    <th className="w-[15%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Nombre</th>
+                    <th className="w-[9%] text-left px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Categoría</th>
                     <th className="w-[7%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Stock</th>
                     <th className="w-[8%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Demanda</th>
-                    <th className="w-[10%] text-right px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Precio base</th>
-                    <th className="w-[9%] text-right px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Mínimo</th>
-                    <th className="w-[9%] text-right px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Máximo</th>
+                    <th className="w-[9%] text-right px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Precio base</th>
+                    <th className="w-[8%] text-right px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Mínimo</th>
+                    <th className="w-[8%] text-right px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Máximo</th>
                     <th className="w-[9%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Estado</th>
-                    <th className="w-[10%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Acciones</th>
+                    {/* Aumentado a 18% para que no se desborde */}
+                    <th className="w-[18%] text-center px-3 py-3 font-semibold text-[#6b7280] uppercase text-[11px] tracking-wide">Acciones</th>
                   </tr>
                   </thead>
                   <tbody>
@@ -141,15 +179,17 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
                         <td className="px-3 py-3 text-right text-[#6b7280] whitespace-nowrap">{fmt(p.minPrice)}</td>
                         <td className="px-3 py-3 text-right text-[#6b7280] whitespace-nowrap">{fmt(p.maxPrice)}</td>
                         <td className="px-3 py-3 text-center">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${
-                          p.productStatus === "ACTIVE" ? "bg-[#dcfce7] text-[#16a34a]" : "bg-[#f1f3f7] text-[#9ca3af]"
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${p.productStatus === "ACTIVE" ? "bg-[#16a34a]" : "bg-[#9ca3af]"}`} />
-                        {p.productStatus === "ACTIVE" ? "Activo" : "Inactivo"}
-                      </span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${
+                              p.productStatus === "ACTIVE" ? "bg-[#dcfce7] text-[#16a34a]" : "bg-[#f1f3f7] text-[#9ca3af]"
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${p.productStatus === "ACTIVE" ? "bg-[#16a34a]" : "bg-[#9ca3af]"}`} />
+                            {p.productStatus === "ACTIVE" ? "Activo" : "Inactivo"}
+                          </span>
                         </td>
                         <td className="px-3 py-3 text-center">
-                          <div className="flex items-center justify-center gap-1">
+                          {/* Añadido whitespace-nowrap para evitar que los botones salten */}
+                          <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            {/* IMPORTANTE: Mantenemos el paso del ID original */}
                             <button onClick={() => onViewDetail(p.id)} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver detalle">
                               <EyeIcon />
                             </button>
@@ -160,13 +200,24 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
                             >
                               <EditIcon />
                             </button>
+                            {/* Hover de papelera en rojo */}
                             <button
                                 onClick={() => setProductToDelete(p)}
-                                className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#fef2f2] hover:text-[#dc2626] transition-colors"
+                                className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#dc2626] hover:text-white transition-colors"
                                 title="Eliminar"
                             >
                               <TrashIcon />
                             </button>
+                            
+                            {/* Línea gris separadora */}
+                            <div className="w-px h-5 bg-[#e2e6ed] mx-0.5" />
+
+                            {/* Switch de estado */}
+                            <ToggleSwitch
+                                checked={p.productStatus === "ACTIVE"}
+                                onChange={() => handleToggleStatus(p)}
+                                disabled={togglingStatusId === p.id}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -282,6 +333,41 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           <span>+</span> Registrar producto
         </button>
       </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Switch de activar / desactivar (Apple-style)                       */
+/* ------------------------------------------------------------------ */
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={checked ? "Desactivar producto" : "Activar producto"}
+      title={checked ? "Desactivar producto" : "Activar producto"}
+      onClick={onChange}
+      disabled={disabled}
+      className={`relative inline-flex items-center w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#1a56db] focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed ${
+        checked ? "bg-[#16a34a]" : "bg-[#9ca3af]"
+      }`}
+    >
+      <span
+        className={`inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+          checked ? "translate-x-[18px]" : "translate-x-[3px]"
+        }`}
+      />
+    </button>
   );
 }
 

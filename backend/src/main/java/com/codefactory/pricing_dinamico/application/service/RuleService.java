@@ -85,12 +85,12 @@ public class RuleService implements CreateRuleUseCase, GetRulesUseCase, Prioriti
             }
         }
 
-        // 2. Las reglas deben existir, estar activas y pertenecer al producto
+        // 2. Las reglas deben existir y pertenecer al producto. El orden también
+        //    incluye reglas inactivas o vencidas para mantener una lista única.
         List<PricingRule> allRules = ruleRepositoryPort.getRules();
         Map<Integer, PricingRule> rulesById = new HashMap<>();
         allRules.forEach(rule -> rulesById.put(rule.getId(), rule));
 
-        LocalDateTime now = PricingRule.currentBusinessTime();
         Set<Integer> affectedProducts = new TreeSet<>();
         for (Integer ruleId : requested.keySet()) {
             PricingRule rule = rulesById.get(ruleId);
@@ -100,20 +100,15 @@ public class RuleService implements CreateRuleUseCase, GetRulesUseCase, Prioriti
             if (!containsProduct(rule, productId)) {
                 throw new IllegalArgumentException("La regla " + ruleId + " no está asociada al producto '" + product.getName() + "'.");
             }
-            if (rule.getRuleStatus() != RuleStatus.ACTIVE) {
-                throw new IllegalArgumentException("La regla " + ruleId + " está inactiva; solo se priorizan reglas activas.");
-            }
             affectedProducts.addAll(rule.getProductIds());
         }
 
-        // 3. Prioridad única por producto: se valida el resultado final para cada producto afectado
-        //    (una regla puede estar en varios productos y comparte su prioridad en todos ellos)
+        // 3. Prioridad única por producto: se valida el resultado final para cada producto afectado.
+        //    También se consideran reglas inactivas o vencidas porque forman parte del orden visible.
         for (Integer affectedProductId : affectedProducts) {
             Map<Integer, Integer> ruleByPriority = new HashMap<>();
             for (PricingRule rule : allRules) {
-                // una regla con vigencia ya terminada no volverá a aplicarse: no ocupa su número de prioridad
-                if (rule.getRuleStatus() != RuleStatus.ACTIVE || rule.hasExpiredAt(now)
-                        || !containsProduct(rule, affectedProductId.longValue())) {
+                if (!containsProduct(rule, affectedProductId.longValue())) {
                     continue;
                 }
                 Integer effective = requested.getOrDefault(rule.getId(), rule.getPriority());

@@ -53,15 +53,6 @@ function formatDate(value?: string): string {
   });
 }
 
-function formatTime(value?: string): string {
-  if (!value) return "—";
-
-  return new Date(value).toLocaleTimeString("es-CO", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export default function PricingRulesScreen() {
   const [rules, setRules] = useState<ApiPricingRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +61,9 @@ export default function PricingRulesScreen() {
   const [confirmRule, setConfirmRule] = useState<ApiPricingRule | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Estado para el switch de activación
+  const [togglingStatusId, setTogglingStatusId] = useState<number | null>(null);
 
   const loadRules = async () => {
     try {
@@ -88,23 +82,22 @@ export default function PricingRulesScreen() {
     void loadRules();
   }, []);
 
-  const handleToggleStatus = async () => {
-    if (!confirmRule) return;
-
+  // Manejador para el switch (conectado a los endpoints existentes)
+  const handleToggleStatus = async (rule: ApiPricingRule) => {
+    setTogglingStatusId(rule.id);
     try {
-      if (confirmRule.ruleStatus === "ACTIVE") {
-        await deactivatePricingRule(confirmRule.id);
+      if (rule.ruleStatus === "ACTIVE") {
+        await deactivatePricingRule(rule.id);
         setToast("Regla desactivada exitosamente.");
       } else {
-        await activatePricingRule(confirmRule.id);
+        await activatePricingRule(rule.id);
         setToast("Regla activada exitosamente.");
       }
-
-      setConfirmRule(null);
       await loadRules();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo cambiar el estado de la regla.");
-      setConfirmRule(null);
+    } finally {
+      setTogglingStatusId(null);
     }
   };
 
@@ -165,6 +158,8 @@ export default function PricingRulesScreen() {
                   <td className="px-3 py-3 text-center text-[#374151]">{formatDate(rule.validFrom)}</td>
                   <td className="px-3 py-3 text-center text-[#374151]">{formatDate(rule.validTo)}</td>
                   <td className="px-3 py-3 text-center text-[#374151]">{rule.productIds?.length ?? 0}</td>
+                  
+                  {/* Estado con su badge */}
                   <td className="px-3 py-3 text-center">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                       rule.ruleStatus === "ACTIVE"
@@ -174,66 +169,34 @@ export default function PricingRulesScreen() {
                       {rule.ruleStatus === "ACTIVE" ? "Activa" : "Inactiva"}
                     </span>
                   </td>
+                  
+                  {/* Acciones con íconos y switch */}
                   <td className="px-3 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                       <button
                         onClick={() => {
                           setEditingRule(rule);
                           setShowModal(true);
                         }}
-                        className="px-2 py-1 rounded-[4px] text-[11px] font-semibold text-[#1a56db] hover:bg-[#e8f0fd]"
+                        className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors"
+                        title="Editar"
                       >
-                        Editar
+                        <EditIcon />
                       </button>
 
-                      <button
-                        onClick={() => setConfirmRule(rule)}
-                        className={`px-2 py-1 rounded-[4px] text-[11px] font-semibold ${
-                          rule.ruleStatus === "ACTIVE"
-                            ? "text-[#dc2626] hover:bg-[#fef2f2]"
-                            : "text-[#16a34a] hover:bg-[#dcfce7]"
-                        }`}
-                      >
-                        {rule.ruleStatus === "ACTIVE" ? "Desactivar" : "Activar"}
-                      </button>
+                      <div className="w-px h-5 bg-[#e2e6ed] mx-0.5" />
+
+                      <ToggleSwitch
+                        checked={rule.ruleStatus === "ACTIVE"}
+                        onChange={() => handleToggleStatus(rule)}
+                        disabled={togglingStatusId === rule.id}
+                      />
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {confirmRule && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[10px] border border-[#e2e6ed] w-full max-w-sm shadow-xl p-6">
-            <h3 className="text-[15px] font-bold text-[#0f1117] mb-2">
-              ¿Deseas {confirmRule.ruleStatus === "ACTIVE" ? "desactivar" : "activar"} esta regla?
-            </h3>
-            <p className="text-[13px] text-[#6b7280] mb-5">
-              {confirmRule.ruleStatus === "ACTIVE"
-                ? "La regla dejará de aplicarse en los próximos cálculos, pero conservará su configuración."
-                : "La regla volverá a evaluarse en los próximos cálculos de precio."}
-            </p>
-
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setConfirmRule(null)}
-                className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px]"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleToggleStatus}
-                className={`px-4 py-2 text-[13px] font-semibold text-white rounded-[6px] ${
-                  confirmRule.ruleStatus === "ACTIVE" ? "bg-[#dc2626]" : "bg-[#16a34a]"
-                }`}
-              >
-                {confirmRule.ruleStatus === "ACTIVE" ? "Desactivar" : "Activar"}
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -250,5 +213,46 @@ export default function PricingRulesScreen() {
 
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Componentes de Íconos y Switch                                     */
+/* ------------------------------------------------------------------ */
+
+function ToggleSwitch({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      disabled={disabled}
+      className={`relative inline-flex items-center w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
+        checked ? "bg-[#16a34a]" : "bg-[#9ca3af]"
+      }`}
+    >
+      <span
+        className={`inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+          checked ? "translate-x-[18px]" : "translate-x-[3px]"
+        }`}
+      />
+    </button>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <path d="M11 2l3 3-8 8H3v-3l8-8z" />
+    </svg>
   );
 }

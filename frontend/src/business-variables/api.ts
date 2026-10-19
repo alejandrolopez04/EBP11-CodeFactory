@@ -1,5 +1,6 @@
 import type { BusinessVariables } from "./types";
 import { API_URL } from "../api/client";
+import { apiFetch } from "../api/http";
 
 const VARIABLES_URL = `${API_URL}/api/variables`;
 
@@ -40,13 +41,13 @@ export type BackendVariable = DemandDto | AvailabilityDto | TemporalDto;
 // HTTP
 // ---------------------------------------------------------------------------
 export async function fetchRaw(signal?: AbortSignal): Promise<BackendVariable[]> {
-  const res = await fetch(VARIABLES_URL, { signal });
+  const res = await apiFetch(VARIABLES_URL, { signal });
   if (!res.ok) throw new Error(`Error ${res.status} al cargar variables`);
   return res.json();
 }
 
 export async function postRaw(items: BackendVariable[]): Promise<BackendVariable[]> {
-  const res = await fetch(VARIABLES_URL, {
+  const res = await apiFetch(VARIABLES_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(items),

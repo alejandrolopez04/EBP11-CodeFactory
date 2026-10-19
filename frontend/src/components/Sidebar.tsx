@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from "react";
 import type { Screen } from "../App";
+import { useProfile } from "../auth/ProfileContext";
+import { ROLE_LABELS } from "../api/profile";
 
 const nav = [
   { id: "dashboard", label: "Dashboard", icon: GridIcon },
@@ -19,7 +22,39 @@ export default function Sidebar({
   isCollapsed: boolean; 
   toggleSidebar: () => void; 
 }) {
-  return (
+
+    const { profiles, current, switchProfile } = useProfile();
+    const initials = current
+        ? current.fullName.split(" ").map((w) => w[0]).slice(0, 2).join("")
+        : "?";
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const profileMenuRef = useRef<HTMLDivElement>(null);
+    const profileTriggerRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        if (!isProfileMenuOpen) return;
+
+        const closeOnOutsideClick = (event: MouseEvent) => {
+            if (!profileMenuRef.current?.contains(event.target as Node)) {
+                setIsProfileMenuOpen(false);
+            }
+        };
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setIsProfileMenuOpen(false);
+                profileTriggerRef.current?.focus();
+            }
+        };
+
+        document.addEventListener("mousedown", closeOnOutsideClick);
+        document.addEventListener("keydown", closeOnEscape);
+        return () => {
+            document.removeEventListener("mousedown", closeOnOutsideClick);
+            document.removeEventListener("keydown", closeOnEscape);
+        };
+    }, [isProfileMenuOpen]);
+
+    return (
     <aside className={`bg-white border-r border-[#e2e6ed] flex flex-col shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-60'}`}>
       
       {/* HEADER */}
@@ -77,18 +112,110 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* FOOTER (Perfil) */}
-      <div className={`py-4 border-t border-[#e2e6ed] flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-4 gap-2.5'}`}>
-        <div className="w-7 h-7 rounded-full bg-[#e8ecf2] flex items-center justify-center shrink-0">
-          <span className="text-[11px] font-semibold text-[#374151] font-display">AM</span>
+        {/* FOOTER (Perfil activo + switch) */}
+        <div className={`border-t border-[#e2e6ed] ${isCollapsed ? 'flex justify-center py-4' : 'p-3'}`}>
+          {isCollapsed ? (
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf1ff] text-[#1a56db]"
+              title={current ? `${current.fullName} · ${ROLE_LABELS[current.role]}` : "Sin perfil"}
+            >
+              <span className="text-[11px] font-semibold font-display">{initials}</span>
+            </div>
+          ) : (
+            <div className="relative" ref={profileMenuRef}>
+              {isProfileMenuOpen && (
+                <div
+                  id="profile-menu"
+                  role="group"
+                  aria-label="Perfiles disponibles"
+                  className="absolute bottom-full left-0 z-30 mb-2 w-full overflow-hidden rounded-xl border border-[#e2e6ed] bg-white p-1.5 shadow-[0_12px_32px_-12px_rgba(15,23,42,0.28)]"
+                >
+                  <div className="px-2.5 pb-1.5 pt-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9ca3af]">
+                    Cambiar perfil
+                  </div>
+                  {profiles.length === 0 ? (
+                    <div className="px-2.5 py-2 text-[11px] text-[#6b7280]">No hay perfiles disponibles</div>
+                  ) : profiles.map((profile) => {
+                    const isCurrent = profile.id === current?.id;
+                    const profileInitials = profile.fullName
+                      .split(" ")
+                      .map((word) => word[0])
+                      .slice(0, 2)
+                      .join("");
+
+                    return (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        aria-pressed={isCurrent}
+                        onClick={() => {
+                          switchProfile(profile.id);
+                          setIsProfileMenuOpen(false);
+                          profileTriggerRef.current?.focus();
+                        }}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors ${
+                          isCurrent ? "bg-[#f1f5ff]" : "hover:bg-[#f8fafc]"
+                        }`}
+                      >
+                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
+                          isCurrent ? "bg-[#dbeafe] text-[#1a56db]" : "bg-[#f1f3f7] text-[#6b7280]"
+                        }`}>
+                          {profileInitials}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className={`block truncate text-[11px] font-medium ${isCurrent ? "text-[#1a56db]" : "text-[#374151]"}`}>
+                            {profile.fullName}
+                          </span>
+                          <span className="mt-0.5 block text-[10px] text-[#9ca3af]">
+                            {ROLE_LABELS[profile.role]}
+                          </span>
+                        </span>
+                        {isCurrent && (
+                          <svg aria-hidden="true" className="h-4 w-4 shrink-0 text-[#1a56db]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m3.5 8.5 3 3 6-7" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <button
+                ref={profileTriggerRef}
+                type="button"
+                aria-label={`Perfil actual: ${current?.fullName ?? "Sin perfil"}. Cambiar perfil`}
+                aria-expanded={isProfileMenuOpen}
+                aria-controls="profile-menu"
+                onClick={() => setIsProfileMenuOpen((open) => !open)}
+                className="group flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-[#f5f7fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a56db]/30"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf1ff] text-[11px] font-semibold text-[#1a56db] ring-1 ring-inset ring-[#1a56db]/10">
+                  {initials}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[11px] font-semibold text-[#0f1117]">
+                    {current?.fullName ?? "Sin perfil"}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[10px] text-[#6b7280]">
+                    {current ? ROLE_LABELS[current.role] : "Seleccionar perfil"}
+                  </span>
+                </span>
+                <svg
+                  aria-hidden="true"
+                  className={`h-4 w-4 shrink-0 text-[#9ca3af] transition-transform group-hover:text-[#6b7280] ${isProfileMenuOpen ? "rotate-180" : ""}`}
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m4 6 4 4 4-4" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
-        {!isCollapsed && (
-          <div className="whitespace-nowrap overflow-hidden">
-            <div className="text-[12px] font-semibold text-[#0f1117]">Ana Martínez</div>
-            <div className="text-[10px] text-[#6b7280]">Administrador</div>
-          </div>
-        )}
-      </div>
     </aside>
   );
 }

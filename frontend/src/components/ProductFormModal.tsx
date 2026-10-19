@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { API_URL } from "../api/client";
+import { apiFetch } from "../api/http";
+
 
 const PRODUCTS_API_URL = `${API_URL}/api/products`;
 
@@ -90,7 +92,7 @@ export default function ProductFormModal({ onClose, onProductCreated, product, o
 
     setLoading(true);
     try {
-      const response = await fetch(isEdit ? `${PRODUCTS_API_URL}/${product!.id}` : PRODUCTS_API_URL, {
+      const response = await apiFetch(isEdit ? `${PRODUCTS_API_URL}/${product!.id}` : PRODUCTS_API_URL, {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

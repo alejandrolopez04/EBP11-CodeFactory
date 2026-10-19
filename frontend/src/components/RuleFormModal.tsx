@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { API_URL, updatePricingRule, type ApiPricingRule } from "../api/client";
+import { apiFetch } from "../api/http";
+
+
 
 const RULES_API_URL = `${API_URL}/api/pricing_rules`;
 const PRODUCTS_API_URL = `${API_URL}/api/products`;
@@ -72,7 +75,7 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
 
   // 1. Cargar todos los productos para el buscador
   useEffect(() => {
-    fetch(PRODUCTS_API_URL)
+    apiFetch(PRODUCTS_API_URL)
       .then((response) => response.json())
       .then((data: ApiProduct[]) => setAllProducts(data))
       .catch(() => setError("No se pudieron cargar los productos."));
@@ -92,7 +95,7 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
     setEffectValue(String(editingRule.effectValue));
     setValidFrom(toLocalInput(editingRule.validFrom));
     setValidTo(toLocalInput(editingRule.validTo));
-    
+
     // NOTA: Si tu ApiPricingRule trae los productos como un array de IDs (productIds)
     // filtramos "allProducts" para mostrarlos en las etiquetas.
     // Si el backend te trae el objeto completo, puedes asignarlo directo.
@@ -156,7 +159,7 @@ export default function RuleFormModal({ editingRule, onClose, onSaved }: RuleFor
         await updatePricingRule(editingRule.id, payload);
         await onSaved?.("Regla actualizada exitosamente.");
       } else {
-        const response = await fetch(RULES_API_URL, {
+        const response = await apiFetch(RULES_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

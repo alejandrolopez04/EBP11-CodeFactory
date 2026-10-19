@@ -1,6 +1,9 @@
 package com.codefactory.pricing_dinamico.infrastructure.adapter.in.rest;
 
+import com.codefactory.pricing_dinamico.domain.model.entities.OperationNotAllowedException;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductNotFoundException;
+import com.codefactory.pricing_dinamico.domain.model.entities.ProfileRequiredException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -31,5 +34,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", "Valor inválido para el parámetro '" + ex.getName() + "'."));
+    }
+
+    @ExceptionHandler(OperationNotAllowedException.class)
+    public ResponseEntity<Map<String, String>> handleNotAllowed(OperationNotAllowedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ProfileRequiredException.class)
+    public ResponseEntity<Map<String, String>> handleProfileRequired(ProfileRequiredException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+                .body(Map.of("message", ex.getMessage()));
     }
 }

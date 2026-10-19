@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import ProductFormModal, { type ApiProduct } from "./ProductFormModal";
 import Toast from "./Toast"
 import { API_URL } from "../api/client";
+import { apiFetch } from "../api/http";
+import RestrictedButton from "../auth/RestrictedButton";
 
 
 const PRODUCTS_API_URL = `${API_URL}/api/products`;
@@ -33,7 +35,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
 
   const loadProducts = useCallback(async () => {
     try {
-      const res = await fetch(PRODUCTS_API_URL);
+      const res = await apiFetch(PRODUCTS_API_URL);
       if (!res.ok) throw new Error();
       setProducts(await res.json());
       setLoadError(null);
@@ -64,7 +66,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
     setDeletingProductId(product.id);
 
     try {
-      const response = await fetch(`${PRODUCTS_API_URL}/${product.id}`, {
+      const response = await apiFetch(`${PRODUCTS_API_URL}/${product.id}`, {
         method: "DELETE",
       });
       if (!response.ok) {
@@ -90,7 +92,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
     setTogglingStatusId(product.id);
 
     try {
-      const response = await fetch(`${PRODUCTS_API_URL}/${product.id}/${action}`, {
+      const response = await apiFetch(`${PRODUCTS_API_URL}/${product.id}/${action}`, {
         method: "PATCH",
       });
       if (!response.ok) {
@@ -120,12 +122,12 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-[#0f1117] font-display">Productos</h1>
           <div className="flex items-center gap-3">
-            <button
+            <RestrictedButton
                 onClick={() => setShowModal(true)}
                 className="px-4 py-2 bg-[#1a56db] text-white text-[13px] font-semibold rounded-[6px] hover:bg-[#1648c0] transition-colors flex items-center gap-2"
             >
               <span>+</span> Registrar producto
-            </button>
+            </RestrictedButton>
           </div>
         </div>
 
@@ -210,22 +212,22 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
                             <button onClick={() => onViewDetail(p.id)} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver detalle">
                               <EyeIcon />
                             </button>
-                            <button
+                            <RestrictedButton
                                 onClick={() => setEditingProduct(p)}
                                 className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors"
                                 title="Editar"
                             >
                               <EditIcon />
-                            </button>
+                            </RestrictedButton>
                             {/* Hover de papelera en rojo */}
-                            <button
+                            <RestrictedButton
                                 onClick={() => setProductToDelete(p)}
                                 className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#dc2626] hover:text-white transition-colors"
                                 title="Eliminar"
                             >
                               <TrashIcon />
-                            </button>
-                            
+                            </RestrictedButton>
+
                             {/* Línea gris separadora */}
                             <div className="w-px h-5 bg-[#e2e6ed] mx-0.5" />
 
@@ -310,19 +312,19 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
 
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-[#e2e6ed] flex items-center justify-end gap-3">
-                  <button
+                  <RestrictedButton
                       onClick={() => setProductToDelete(null)}
                       className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px] hover:bg-[#f1f3f7] transition-colors"
                   >
                     Cancelar
-                  </button>
-                  <button
+                  </RestrictedButton>
+                  <RestrictedButton
                       onClick={confirmDelete}
                       disabled={deletingProductId === productToDelete.id}
                       className="px-4 py-2 text-[13px] font-semibold bg-[#1a56db] text-white rounded-[6px] hover:bg-[#1648c0] transition-colors"
                   >
                     {deletingProductId === productToDelete.id ? "Eliminando..." : "Aceptar"}
-                  </button>
+                  </RestrictedButton>
                 </div>
               </div>
             </div>
@@ -344,12 +346,12 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         </div>
         <h3 className="text-[16px] font-semibold text-[#0f1117] font-display mb-1">Aún no has registrado productos</h3>
         <p className="text-[13px] text-[#6b7280] mb-5 max-w-xs">Registra tu primer producto para comenzar a configurar reglas de pricing dinámico.</p>
-        <button
+        <RestrictedButton
             onClick={onAdd}
             className="px-4 py-2 bg-[#1a56db] text-white text-[13px] font-semibold rounded-[6px] hover:bg-[#1648c0] transition-colors flex items-center gap-2"
         >
           <span>+</span> Registrar producto
-        </button>
+        </RestrictedButton>
       </div>
   );
 }
@@ -368,7 +370,7 @@ function ToggleSwitch({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <RestrictedButton
       type="button"
       role="switch"
       aria-checked={checked}
@@ -385,7 +387,7 @@ function ToggleSwitch({
           checked ? "translate-x-[18px]" : "translate-x-[3px]"
         }`}
       />
-    </button>
+    </RestrictedButton>
   );
 }
 

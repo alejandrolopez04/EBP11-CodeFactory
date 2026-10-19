@@ -26,6 +26,9 @@ import {
   type ApiPriceCalculation,
   type ApiPricingRule,
 } from "../api/client";
+import { apiFetch } from "../api/http";
+import { useProfile } from "../auth/ProfileContext";
+import RestrictedButton from "../auth/RestrictedButton";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -68,6 +71,28 @@ const byPriority = (a: ApiPricingRule, b: ApiPricingRule) =>
 /*  Fila sortable                                                      */
 /* ------------------------------------------------------------------ */
 
+function GripIcon() {
+  return (
+      <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+        <circle cx="2.5" cy="2.5" r="1.2" />
+        <circle cx="7.5" cy="2.5" r="1.2" />
+        <circle cx="2.5" cy="7" r="1.2" />
+        <circle cx="7.5" cy="7" r="1.2" />
+        <circle cx="2.5" cy="11.5" r="1.2" />
+        <circle cx="7.5" cy="11.5" r="1.2" />
+      </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="7" width="10" height="7" rx="1.5" />
+        <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+      </svg>
+  );
+}
+
 function SortableRuleRow({
   rule,
   position,
@@ -105,22 +130,22 @@ function SortableRuleRow({
       className={`border-b border-[#f1f3f7] last:border-b-0 transition-colors ${rowOpacity}`}
     >
       <td className="pl-3 pr-1 py-3 w-8">
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          aria-label="Reordenar regla"
-          className="cursor-grab active:cursor-grabbing disabled:opacity-40 text-[#9ca3af] hover:text-[#1a56db] p-1 rounded transition-colors touch-none"
-        >
-          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
-            <circle cx="2.5" cy="2.5" r="1.2" />
-            <circle cx="7.5" cy="2.5" r="1.2" />
-            <circle cx="2.5" cy="7" r="1.2" />
-            <circle cx="7.5" cy="7" r="1.2" />
-            <circle cx="2.5" cy="11.5" r="1.2" />
-            <circle cx="7.5" cy="11.5" r="1.2" />
-          </svg>
-        </button>
+        {disabled ? (
+            <span className="inline-flex p-1 text-[#d1d5db]" aria-hidden="true">
+      <GripIcon />
+    </span>
+        ) : (
+            <button
+                type="button"
+                {...attributes}
+                {...listeners}
+                aria-label="Reordenar regla"
+                title="Arrastra para reordenar"
+                className="cursor-grab active:cursor-grabbing text-[#9ca3af] hover:text-[#1a56db] p-1 rounded transition-colors touch-none"
+            >
+              <GripIcon />
+            </button>
+        )}
       </td>
       <td className="px-3 py-3 w-12 font-mono text-[12px] text-[#6b7280]">
         {position}
@@ -165,6 +190,7 @@ export default function ProductDetailScreen({
   productId: number | null;
   onBack: () => void;
 }) {
+  const { canModify } = useProfile();
   const [product, setProduct] = useState<ApiProduct | null>(null);
   const [rules, setRules] = useState<ApiPricingRule[]>([]);
   const [calc, setCalc] = useState<ApiPriceCalculation | null>(null);
@@ -180,7 +206,7 @@ export default function ProductDetailScreen({
       setLoading(true);
       setError(null);
       const [productsRes, rulesData, calcData] = await Promise.all([
-        fetch(`${API_URL}/api/products`),
+        apiFetch(`${API_URL}/api/products`),
         fetchRulesByProduct(productId),
         fetchProductPrice(productId),
       ]);
@@ -204,12 +230,12 @@ export default function ProductDetailScreen({
 
   // Función para activar/desactivar el producto directamente desde aquí
   const handleToggleStatus = async () => {
-    if (!product) return;
+    if (!product || !canModify) return;
     setTogglingStatus(true);
     const action = product.productStatus === "ACTIVE" ? "deactivate" : "activate";
     
     try {
-      const res = await fetch(`${API_URL}/api/products/${product.id}/${action}`, {
+      const res = await apiFetch(`${API_URL}/api/products/${product.id}/${action}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
       });
@@ -244,7 +270,7 @@ export default function ProductDetailScreen({
 
   const handleDragEnd = async ({ active, over }: DragEndEvent) => {
     // Si el producto está inactivo, no permitimos reordenar
-    if (!over || active.id === over.id || saving || productId == null || product?.productStatus === "INACTIVE") return;
+    if (!over || active.id === over.id || saving || productId == null || product?.productStatus === "INACTIVE" || !canModify) return;
 
     const oldIndex = sortedRules.findIndex((r) => r.id === active.id);
     const newIndex = sortedRules.findIndex((r) => r.id === over.id);
@@ -327,7 +353,7 @@ export default function ProductDetailScreen({
               <span className="font-mono text-[12px] text-[#9ca3af] mt-1 block">SKU: {product.sku}</span>
             </div>
             
-            <button
+            <RestrictedButton
               onClick={handleToggleStatus}
               disabled={togglingStatus}
               className={`px-3 py-1.5 text-[12px] font-semibold rounded-[6px] transition-colors border ${
@@ -337,7 +363,7 @@ export default function ProductDetailScreen({
               } disabled:opacity-50`}
             >
               {togglingStatus ? "Cambiando..." : product.productStatus === "ACTIVE" ? "Desactivar producto" : "Activar producto"}
-            </button>
+            </RestrictedButton>
           </div>
 
           {/* Banner de advertencia si está inactivo */}
@@ -418,9 +444,19 @@ export default function ProductDetailScreen({
               <h2 className="text-[12px] font-bold text-[#374151] font-display uppercase tracking-wide">
                 Reglas evaluadas
               </h2>
-              <span className="text-[11px] text-[#9ca3af]">
-                {isInactiveProduct ? "Reglas pausadas" : saving ? "Guardando…" : "Arrastra para reordenar"}
-              </span>
+              {!canModify ? (
+                  <span
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#f1f3f7] border border-[#e2e6ed] text-[11px] font-medium text-[#6b7280]"
+                      title="Cambia al perfil Administrador para reordenar las reglas"
+                  >
+                  <LockIcon />
+                  Solo lectura
+                  </span>
+                            ) : (
+                  <span className="text-[11px] text-[#9ca3af]">
+                  {isInactiveProduct ? "Reglas pausadas" : saving ? "Guardando…" : "Arrastra para reordenar"}
+                  </span>
+              )}
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={sortedRules.map((r) => r.id)} strategy={verticalListSortingStrategy}>
@@ -451,7 +487,7 @@ export default function ProductDetailScreen({
                         position={i + 1}
                         met={!isInactiveProduct && applied.has(rule.id)} // Si está inactivo, forzamos a que no muestre el "✓"
                         isInactive={!isPrioritizable(rule)}
-                        disabled={saving || isInactiveProduct} // Bloquea el drag si está inactivo
+                        disabled={saving || isInactiveProduct || !canModify} // Bloquea el drag si está inactivo
                       />
                     ))}
                   </tbody>

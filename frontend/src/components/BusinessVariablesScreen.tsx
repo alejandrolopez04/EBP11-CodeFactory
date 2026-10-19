@@ -20,6 +20,7 @@ import {
     validateDemandValues,
     validateScheduleValues,
 } from "../business-variables/validators";
+import RestrictedButton from "../auth/RestrictedButton";
 
 export default function BusinessVariablesScreen() {
     const { variables, status, save } = useBusinessVariables();
@@ -285,9 +286,9 @@ function VariableCard({
                     </div>
                 </div>
                 {!editing && (
-                    <button onClick={onEdit} className="px-3 py-1.5 text-[12px] font-semibold text-[#1a56db] border border-[#1a56db]/30 rounded-[6px] hover:bg-[#e8f0fd] transition-colors">
+                    <RestrictedButton onClick={onEdit} className="px-3 py-1.5 text-[12px] font-semibold text-[#1a56db] border border-[#1a56db]/30 rounded-[6px] hover:bg-[#e8f0fd] transition-colors">
                         Editar
-                    </button>
+                    </RestrictedButton>
                 )}
             </div>
 

@@ -7,6 +7,8 @@ import {
   fetchPricingRules,
   type ApiPricingRule,
 } from "../api/client";
+import RestrictedButton from "../auth/RestrictedButton";
+import { useProfile } from "../auth/ProfileContext";
 
 const VARIABLE_LABELS: Record<string, string> = {
   DEMANDA: "Demanda",
@@ -70,7 +72,7 @@ export default function PricingRulesScreen() {
   const [confirmRule, setConfirmRule] = useState<ApiPricingRule | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+  const { canModify } = useProfile();
   const [togglingStatusId, setTogglingStatusId] = useState<number | null>(null);
 
   const loadRules = async () => {
@@ -78,14 +80,14 @@ export default function PricingRulesScreen() {
       setLoading(true);
       setError(null);
       const data = await fetchPricingRules();
-      
+
       // 1. Detectar reglas activas que estén fuera de rango
       const activeOutOfRange = data.filter((r) => r.ruleStatus === "ACTIVE" && isOutOfRange(r));
-      
+
       if (activeOutOfRange.length > 0) {
         // Desactivar automáticamente en el backend
         await Promise.all(activeOutOfRange.map((r) => deactivatePricingRule(r.id)));
-        
+
         // Volver a consultar para traer el estado actualizado
         const updatedData = await fetchPricingRules();
         setRules(updatedData);
@@ -132,7 +134,7 @@ export default function PricingRulesScreen() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#0f1117] font-display">Reglas de Pricing</h1>
-        <button
+        <RestrictedButton
           onClick={() => {
             setEditingRule(null);
             setShowModal(true);
@@ -140,7 +142,7 @@ export default function PricingRulesScreen() {
           className="px-4 py-2 bg-[#1a56db] text-white text-[13px] font-semibold rounded-[6px] hover:bg-[#1648c0] transition-colors"
         >
           + Crear regla
-        </button>
+        </RestrictedButton>
       </div>
 
       {error && (
@@ -186,7 +188,7 @@ export default function PricingRulesScreen() {
                     <td className="px-3 py-3 text-[#374151]">{getConditionText(rule)}</td>
                     <td className="px-3 py-3 text-center font-semibold text-[#16a34a]">{getEffectText(rule)}</td>
                     <td className="px-3 py-3 text-center text-[#374151]">{formatDate(rule.validFrom)}</td>
-                    
+
                     {/* 3. Aviso visual de fuera de rango */}
                     <td className="px-3 py-3 text-center text-[#374151]">
                       <div className="flex flex-col items-center justify-center gap-1">
@@ -198,9 +200,9 @@ export default function PricingRulesScreen() {
                         )}
                       </div>
                     </td>
-                    
+
                     <td className="px-3 py-3 text-center text-[#374151]">{rule.productIds?.length ?? 0}</td>
-                    
+
                     <td className="px-3 py-3 text-center">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                         rule.ruleStatus === "ACTIVE"
@@ -210,10 +212,10 @@ export default function PricingRulesScreen() {
                         {rule.ruleStatus === "ACTIVE" ? "Activa" : "Inactiva"}
                       </span>
                     </td>
-                    
+
                     <td className="px-3 py-3 text-center">
                       <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-                        <button
+                        <RestrictedButton
                           onClick={() => {
                             setEditingRule(rule);
                             setShowModal(true);
@@ -222,15 +224,18 @@ export default function PricingRulesScreen() {
                           title="Editar"
                         >
                           <EditIcon />
-                        </button>
+                        </RestrictedButton>
 
-                        <div className="w-px h-5 bg-[#e2e6ed] mx-0.5" />
-
-                        <ToggleSwitch
-                          checked={rule.ruleStatus === "ACTIVE"}
-                          onChange={() => handleToggleStatus(rule)}
-                          disabled={togglingStatusId === rule.id}
-                        />
+                          <div className="w-px h-5 bg-[#e2e6ed] mx-0.5" />
+                          <span
+                              title={!canModify ? "Solo disponible para administradores" : undefined}
+                          >
+                              <ToggleSwitch
+                                  checked={rule.ruleStatus === "ACTIVE"}
+                                  onChange={() => handleToggleStatus(rule)}
+                                  disabled={!canModify || togglingStatusId === rule.id}
+                              />
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -271,7 +276,7 @@ function ToggleSwitch({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <RestrictedButton
       type="button"
       role="switch"
       aria-checked={checked}
@@ -286,7 +291,7 @@ function ToggleSwitch({
           checked ? "translate-x-[18px]" : "translate-x-[3px]"
         }`}
       />
-    </button>
+    </RestrictedButton>
   );
 }
 

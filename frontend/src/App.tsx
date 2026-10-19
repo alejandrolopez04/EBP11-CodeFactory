@@ -13,7 +13,7 @@ import { ProfileProvider } from "./auth/ProfileContext";
 export type Screen = "dashboard" | "products" | "rules" | "variables" | "history" | "product-detail";
 
 export default function App() {
-    const [activeScreen, setActiveScreen] = useState<Screen>("products");
+    const [activeScreen, setActiveScreen] = useState<Screen>("dashboard");
     const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
     
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);

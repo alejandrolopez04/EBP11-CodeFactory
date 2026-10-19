@@ -10,7 +10,7 @@ import java.util.Set;
 
 @Component
 public class RoleAuthorizationInterceptor implements HandlerInterceptor {
-    private static final Set<String> READ_METHODS = Set.of("GET", "HEAD", "OPTIONS");
+    private static final Set<String> READ_METHODS = Set.of("GET", "HEAD");
 
     private final AuthorizeOperationUseCase authorizeOperationUseCase;
 
@@ -20,11 +20,15 @@ public class RoleAuthorizationInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        if (READ_METHODS.contains(request.getMethod())) {
-            return true; // lecturas y preflight de CORS pasan siempre
+        if ("OPTIONS".equals(request.getMethod())) {
+            return true; // preflight de CORS
         }
         String token = BearerTokenExtractor.extract(request.getHeader(HttpHeaders.AUTHORIZATION));
-        authorizeOperationUseCase.checkCanModify(token);
+        if (READ_METHODS.contains(request.getMethod())) {
+            authorizeOperationUseCase.authenticate(token);   // cualquier perfil válido
+        } else {
+            authorizeOperationUseCase.checkCanModify(token); // solo ADMIN
+        }
         return true;
     }
 }

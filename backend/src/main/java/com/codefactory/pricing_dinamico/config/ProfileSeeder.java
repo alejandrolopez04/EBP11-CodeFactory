@@ -20,8 +20,8 @@ public class ProfileSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        upsert("admin@pricing.com", "Ana Martínez", Role.ADMIN);
-        upsert("analista@pricing.com", "Carlos Gómez", Role.ANALISTA);
+        upsert("admin@pricing.com", "Diego Candamil", Role.ADMIN);
+        upsert("analista@pricing.com", "Alejandro Lopez", Role.ANALISTA);
     }
 
     private void upsert(String email, String fullName, Role role) {

@@ -66,7 +66,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
     setDeletingProductId(product.id);
 
     try {
-      const response = await fetch(`${PRODUCTS_API_URL}/${product.id}`, {
+      const response = await apiFetch(`${PRODUCTS_API_URL}/${product.id}`, {
         method: "DELETE",
       });
       if (!response.ok) {
@@ -92,7 +92,7 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
     setTogglingStatusId(product.id);
 
     try {
-      const response = await fetch(`${PRODUCTS_API_URL}/${product.id}/${action}`, {
+      const response = await apiFetch(`${PRODUCTS_API_URL}/${product.id}/${action}`, {
         method: "PATCH",
       });
       if (!response.ok) {
@@ -209,9 +209,9 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
                           {/* Añadido whitespace-nowrap para evitar que los botones salten */}
                           <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                             {/* IMPORTANTE: Mantenemos el paso del ID original */}
-                            <RestrictedButton onClick={() => onViewDetail(p.id)} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver detalle">
+                            <button onClick={() => onViewDetail(p.id)} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver detalle">
                               <EyeIcon />
-                            </RestrictedButton>
+                            </button>
                             <RestrictedButton
                                 onClick={() => setEditingProduct(p)}
                                 className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors"
@@ -247,13 +247,13 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
                 <div className="px-4 py-3 border-t border-[#e2e6ed] flex items-center justify-between">
                   <span className="text-[12px] text-[#6b7280]">Mostrando {filtered.length} de {products.length} productos</span>
                   <div className="flex items-center gap-1">
-                    <RestrictedButton className="px-2.5 py-1 text-[12px] font-medium text-[#6b7280] border border-[#e2e6ed] rounded-[4px] hover:bg-[#f1f3f7] disabled:opacity-40" disabled>
+                    <button className="px-2.5 py-1 text-[12px] font-medium text-[#6b7280] border border-[#e2e6ed] rounded-[4px] hover:bg-[#f1f3f7] disabled:opacity-40" disabled>
                       ← Anterior
-                    </RestrictedButton>
-                    <RestrictedButton className="px-2.5 py-1 text-[12px] font-semibold bg-[#1a56db] text-white rounded-[4px]">1</RestrictedButton>
-                    <RestrictedButton className="px-2.5 py-1 text-[12px] font-medium text-[#6b7280] border border-[#e2e6ed] rounded-[4px] hover:bg-[#f1f3f7]">
+                    </button>
+                    <button className="px-2.5 py-1 text-[12px] font-semibold bg-[#1a56db] text-white rounded-[4px]">1</button>
+                    <button className="px-2.5 py-1 text-[12px] font-medium text-[#6b7280] border border-[#e2e6ed] rounded-[4px] hover:bg-[#f1f3f7]">
                       Siguiente →
-                    </RestrictedButton>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -370,7 +370,7 @@ function ToggleSwitch({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <RestrictedButton
       type="button"
       role="switch"
       aria-checked={checked}
@@ -387,7 +387,7 @@ function ToggleSwitch({
           checked ? "translate-x-[18px]" : "translate-x-[3px]"
         }`}
       />
-    </button>
+    </RestrictedButton>
   );
 }
 

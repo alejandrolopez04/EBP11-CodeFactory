@@ -85,7 +85,7 @@ export async function prioritizeRules(
   productId: number,
   priorities: { ruleId: number; priority: number }[]
 ): Promise<ApiPricingRule[]> {
-  const response = await fetch(`${PRICING_RULES_URL}/priorities`, {
+  const response = await apiFetch(`${PRICING_RULES_URL}/priorities`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ productId, priorities }),
@@ -101,7 +101,7 @@ export async function prioritizeRules(
 
 /** GET /api/pricing_rules?productId=N -> reglas del producto, ordenadas por prioridad. */
 export async function fetchRulesByProduct(productId: number): Promise<ApiPricingRule[]> {
-  const response = await fetch(`${PRICING_RULES_URL}?productId=${productId}`);
+  const response = await apiFetch(`${PRICING_RULES_URL}?productId=${productId}`);
   if (!response.ok) {
     const error = await response.json().catch(() => null);
     throw new Error(error?.message || "No se pudieron cargar las reglas del producto.");
@@ -118,7 +118,7 @@ export interface ApiPriceCalculation {
 
 /** GET /api/products/:id/price -> precio calculado por el motor y reglas que se aplicaron. */
 export async function fetchProductPrice(productId: number): Promise<ApiPriceCalculation> {
-  const response = await fetch(`${API_URL}/api/products/${productId}/price`);
+  const response = await apiFetch(`${API_URL}/api/products/${productId}/price`);
   if (!response.ok) {
     const error = await response.json().catch(() => null);
     throw new Error(error?.message || "No se pudo calcular el precio.");

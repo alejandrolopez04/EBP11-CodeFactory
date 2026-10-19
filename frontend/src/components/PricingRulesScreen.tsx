@@ -227,8 +227,9 @@ export default function PricingRulesScreen() {
                         </RestrictedButton>
 
                           <div className="w-px h-5 bg-[#e2e6ed] mx-0.5" />
-
-                          <span title={!canModify ? "Solo disponible para administradores" : undefined}>
+                          <span
+                              title={!canModify ? "Solo disponible para administradores" : undefined}
+                          >
                               <ToggleSwitch
                                   checked={rule.ruleStatus === "ACTIVE"}
                                   onChange={() => handleToggleStatus(rule)}
@@ -275,7 +276,7 @@ function ToggleSwitch({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <RestrictedButton
       type="button"
       role="switch"
       aria-checked={checked}
@@ -290,7 +291,7 @@ function ToggleSwitch({
           checked ? "translate-x-[18px]" : "translate-x-[3px]"
         }`}
       />
-    </button>
+    </RestrictedButton>
   );
 }
 

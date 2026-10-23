@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../api/client";
 import { apiFetch } from "../api/http";
+import LoadingScreen from "./LoadingScreen";
 
 
 const DASHBOARD_API_URL = `${API_URL}/api/dashboard`;
@@ -65,6 +66,13 @@ export default function DashboardScreen() {
         ]
         : [];
 
+    if (!data && !error) {
+        return <LoadingScreen label="Cargando dashboard…" />;
+    }
+    if (!data && error) {
+        return <LoadingScreen label="No se pudo cargar el dashboard" error={error} />;
+    }
+
     return (
         <div className="p-8">
             <h1 className="text-2xl font-bold text-[#0f1117] font-display mb-6">Dashboard</h1>
@@ -113,13 +121,17 @@ export default function DashboardScreen() {
                         </tr>
                         </thead>
                         <tbody>
-                        {data?.recentUpdates.map((u) => {
+                        {data?.recentUpdates.map((u, index) => {
                             const diff = u.previousPrice === null ? 0 : u.finalPrice - u.previousPrice;
                             const pct = u.previousPrice ? (diff / u.previousPrice) * 100 : 0;
                             const color = diff > 0 ? "text-[#16a34a]" : diff < 0 ? "text-[#dc2626]" : "text-[#6b7280]";
                             const arrow = diff > 0 ? "▲" : diff < 0 ? "▼" : "–";
                             return (
-                                <tr key={u.traceId} className="border-t border-[#f1f3f7]">
+                                <tr
+                                    key={u.traceId}
+                                    className="activity-row-enter border-t border-[#f1f3f7]"
+                                    style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
+                                >
                                     <td className="px-4 py-2.5 font-medium text-[#0f1117]">{u.productName}</td>
                                     <td className="px-4 py-2.5 text-right text-[#6b7280]">
                                         {u.previousPrice !== null ? fmt(u.previousPrice) : "—"}

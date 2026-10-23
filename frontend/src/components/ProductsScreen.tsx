@@ -4,6 +4,7 @@ import Toast from "./Toast"
 import { API_URL } from "../api/client";
 import { apiFetch } from "../api/http";
 import RestrictedButton from "../auth/RestrictedButton";
+import LoadingScreen from "./LoadingScreen";
 
 
 const PRODUCTS_API_URL = `${API_URL}/api/products`;
@@ -58,6 +59,13 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
   );
 
   const showEmpty = !loading && !loadError && products.length === 0;
+
+  if (loading) {
+    return <LoadingScreen label="Cargando productos…" />;
+  }
+  if (loadError) {
+    return <LoadingScreen label="No se pudieron cargar los productos" error={loadError} />;
+  }
 
   // Función que elimina definitivamente
   const confirmDelete = async () => {

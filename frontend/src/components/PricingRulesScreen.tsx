@@ -9,6 +9,7 @@ import {
 } from "../api/client";
 import RestrictedButton from "../auth/RestrictedButton";
 import { useProfile } from "../auth/ProfileContext";
+import LoadingScreen from "./LoadingScreen";
 
 const VARIABLE_LABELS: Record<string, string> = {
   DEMANDA: "Demanda",
@@ -72,6 +73,7 @@ export default function PricingRulesScreen() {
   const [confirmRule, setConfirmRule] = useState<ApiPricingRule | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { canModify } = useProfile();
   const [togglingStatusId, setTogglingStatusId] = useState<number | null>(null);
 
@@ -79,6 +81,7 @@ export default function PricingRulesScreen() {
     try {
       setLoading(true);
       setError(null);
+      setLoadError(null);
       const data = await fetchPricingRules();
 
       // 1. Detectar reglas activas que estén fuera de rango
@@ -96,7 +99,7 @@ export default function PricingRulesScreen() {
         setRules(data);
       }
     } catch {
-      setError("No se pudieron cargar las reglas de pricing.");
+      setLoadError("No se pudieron cargar las reglas de pricing. Verifica que el backend esté corriendo.");
     } finally {
       setLoading(false);
     }
@@ -130,6 +133,13 @@ export default function PricingRulesScreen() {
     }
   };
 
+  if (loading) {
+    return <LoadingScreen label="Cargando reglas…" />;
+  }
+  if (loadError) {
+    return <LoadingScreen label="No se pudieron cargar las reglas" error={loadError} />;
+  }
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -151,11 +161,7 @@ export default function PricingRulesScreen() {
         </div>
       )}
 
-      {loading ? (
-        <div className="bg-white border border-[#e2e6ed] rounded-[8px] p-8 text-center text-[#6b7280]">
-          Cargando reglas...
-        </div>
-      ) : (
+      {!loading && (
         <div className="bg-white border border-[#e2e6ed] rounded-[8px] overflow-x-auto">
           <table className="w-full text-[13px] table-fixed min-w-[1000px]">
             <thead>

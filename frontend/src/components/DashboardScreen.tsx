@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { API_URL } from "../api/client";
 import { apiFetch } from "../api/http";
 import LoadingScreen from "./LoadingScreen";
+import { triggerText } from "../utils/triggerText";
 
 
 const DASHBOARD_API_URL = `${API_URL}/api/dashboard`;
@@ -9,6 +10,7 @@ const REFRESH_MS = 15000;
 
 interface RecentUpdate {
     traceId: number;
+    productId: number;
     productName: string;
     previousPrice: number | null;
     finalPrice: number;
@@ -34,7 +36,7 @@ const fmt = (n: number) => "$" + n.toLocaleString("es-CL");
 const fmtTime = (iso: string) =>
     new Date(iso).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 
-export default function DashboardScreen() {
+export default function DashboardScreen({ onViewHistory }: { onViewHistory: (productId: number) => void }) {
     const [data, setData] = useState<Dashboard | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -132,7 +134,16 @@ export default function DashboardScreen() {
                                     className="activity-row-enter border-t border-[#f1f3f7]"
                                     style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
                                 >
-                                    <td className="px-4 py-2.5 font-medium text-[#0f1117]">{u.productName}</td>
+                                    <td className="px-4 py-2.5 font-medium text-[#0f1117]">
+                                        {/* HU14: abre el historial completo del producto */}
+                                        <button
+                                            onClick={() => onViewHistory(u.productId)}
+                                            className="text-left hover:text-[#1a56db] hover:underline underline-offset-2 transition-colors"
+                                            title="Ver historial de precios"
+                                        >
+                                            {u.productName}
+                                        </button>
+                                    </td>
                                     <td className="px-4 py-2.5 text-right text-[#6b7280]">
                                         {u.previousPrice !== null ? fmt(u.previousPrice) : "—"}
                                     </td>
@@ -147,7 +158,7 @@ export default function DashboardScreen() {
                                         </span>
                                         <span className="ml-1.5">{fmt(u.finalPrice)}</span>
                                     </td>
-                                    <td className="px-4 py-2.5 text-[#374151]">{u.trigger}</td>
+                                    <td className="px-4 py-2.5 text-[#374151]">{triggerText(u.trigger)}</td>
                                     <td className="px-4 py-2.5 text-[#6b7280] whitespace-nowrap">{fmtTime(u.at)}</td>
                                 </tr>
                             );

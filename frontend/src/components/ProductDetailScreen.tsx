@@ -186,9 +186,11 @@ function SortableRuleRow({
 export default function ProductDetailScreen({
   productId,
   onBack,
+  onViewHistory,
 }: {
   productId: number | null;
   onBack: () => void;
+  onViewHistory: (productId: number) => void;
 }) {
   const { canModify } = useProfile();
   const [product, setProduct] = useState<ApiProduct | null>(null);
@@ -352,7 +354,20 @@ export default function ProductDetailScreen({
               </div>
               <span className="font-mono text-[12px] text-[#9ca3af] mt-1 block">SKU: {product.sku}</span>
             </div>
-            
+
+            <div className="flex items-center gap-2">
+            {/* HU14: pantalla de historial de precios (lectura, disponible para todos los perfiles) */}
+            <button
+              onClick={() => onViewHistory(product.id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[#374151] border border-[#e2e6ed] rounded-[6px] hover:bg-[#f1f3f7] transition-colors"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 1 0 2.6-6.4" />
+                <path d="M3 4v5h5" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+              Ver historial
+            </button>
             <RestrictedButton
               onClick={handleToggleStatus}
               disabled={togglingStatus}
@@ -364,6 +379,7 @@ export default function ProductDetailScreen({
             >
               {togglingStatus ? "Cambiando..." : product.productStatus === "ACTIVE" ? "Desactivar producto" : "Activar producto"}
             </RestrictedButton>
+            </div>
           </div>
 
           {/* Banner de advertencia si está inactivo */}

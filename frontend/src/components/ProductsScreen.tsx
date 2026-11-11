@@ -13,7 +13,13 @@ function fmt(n: number) {
   return "$" + n.toLocaleString("es-CL");
 }
 
-export default function ProductsScreen({ onViewDetail }: { onViewDetail: (productId: number) => void }) {
+export default function ProductsScreen({
+  onViewDetail,
+  onViewHistory,
+}: {
+  onViewDetail: (productId: number) => void;
+  onViewHistory: (productId: number) => void;
+}) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [showModal, setShowModal] = useState(false);
@@ -220,6 +226,10 @@ export default function ProductsScreen({ onViewDetail }: { onViewDetail: (produc
                             <button onClick={() => onViewDetail(p.id)} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Ver detalle">
                               <EyeIcon />
                             </button>
+                            {/* HU14: pantalla de historial de precios */}
+                            <button onClick={() => onViewHistory(p.id)} className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors" title="Historial de precios">
+                              <HistoryIcon />
+                            </button>
                             <RestrictedButton
                                 onClick={() => setEditingProduct(p)}
                                 className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#e8ecf2] hover:text-[#1a56db] transition-colors"
@@ -404,6 +414,16 @@ function EyeIcon() {
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" />
         <circle cx="8" cy="8" r="2" />
+      </svg>
+  );
+}
+
+function HistoryIcon() {
+  return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 12a9 9 0 1 0 2.6-6.4" />
+        <path d="M3 4v5h5" />
+        <path d="M12 7v5l3 2" />
       </svg>
   );
 }

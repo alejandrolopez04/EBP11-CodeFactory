@@ -13,7 +13,7 @@ public interface GetPricingDashboardUseCase {
 
     record NextChange(LocalDateTime at, String description, int products) {}
 
-    record RecentUpdate(Long traceId, String productName, BigDecimal previousPrice, BigDecimal finalPrice,
+    record RecentUpdate(Long traceId, Long productId, String productName, BigDecimal previousPrice, BigDecimal finalPrice,
                                TriggerType triggerType, String trigger, boolean clampedToMax,
                                boolean clampedToMin, LocalDateTime at) {}
 

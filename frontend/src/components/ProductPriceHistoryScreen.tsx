@@ -3,7 +3,7 @@ import { fetchPriceHistory, type ApiPriceChange, type ApiPriceHistory, type Trig
 import LoadingScreen from "./LoadingScreen";
 import { triggerText } from "../utils/triggerText";
 import DateRangePicker, { PRESETS, rangeFor, type DateRange, type RangePreset } from "./DateRangePicker";
-
+import { fetchPriceHistory } from "../api/client";
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */

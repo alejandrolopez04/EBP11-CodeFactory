@@ -8,6 +8,7 @@ const nav = [
   { id: "products", label: "Productos", icon: BoxIcon },
   { id: "rules", label: "Reglas de Pricing", icon: RulesIcon },
   { id: "variables", label: "Variables de Negocio", icon: SlidersIcon },
+  { id: "simulation", label: "Simulación", icon: FlaskIcon },
 ] as const;
 
 export default function Sidebar({ 
@@ -258,3 +259,21 @@ function SlidersIcon({ size, active }: { size: number; active: boolean }) {
   );
 }
 
+function FlaskIcon({ size, active }: { size: number; active: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={active ? "white" : "#9ca3af"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2h4M6.5 2v4L3 12.5A1 1 0 0 0 3.9 14h8.2a1 1 0 0 0 .9-1.5L9.5 6V2" />
+      <path d="M4.5 10h7" />
+    </svg>
+  );
+}
+
+function HistoryIcon({ size, active }: { size: number; active: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={active ? "white" : "#9ca3af"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 8a6 6 0 1 0 1.5-3.9" />
+      <path d="M2 3v3.5L5.5 8" />
+      <path d="M8 5v3l2 1.5" />
+    </svg>
+  );
+}

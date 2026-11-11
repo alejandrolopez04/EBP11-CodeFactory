@@ -7,7 +7,7 @@ import { apiFetch } from "../api/http";
 const RULES_API_URL = `${API_URL}/api/pricing_rules`;
 const PRODUCTS_API_URL = `${API_URL}/api/products`;
 
-const VARIABLE_CONFIG = {
+export const VARIABLE_CONFIG = {
   DEMANDA: {
     label: "Demanda",
     field: "level" as const,
@@ -36,7 +36,7 @@ const VARIABLE_CONFIG = {
   },
 };
 
-type VariableKey = keyof typeof VARIABLE_CONFIG;
+export type VariableKey = keyof typeof VARIABLE_CONFIG;
 
 interface ApiProduct {
   id: number;

@@ -44,6 +44,14 @@ public class PricingEngineService implements CalculateFinalPriceUseCase {
         // Todo se lee en el momento de la solicitud: cálculo en tiempo real, sin caché
         Product product = productRepositoryPort.getProductById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(productId));
+        return calculateWith(product, ruleRepositoryPort.getRules());
+    }
+
+    /**
+     * Cálculo puro del motor con un conjunto de reglas dado: no actualiza el precio del producto
+     * ni guarda trazas. Lo usan el cálculo normal y la simulación (HU13).
+     */
+    public PriceCalculationResult calculateWith(Product product, List<PricingRule> rules) {
         LocalDateTime now = PricingRule.currentBusinessTime();
         BigDecimal basePrice = product.getBasePrice();
 
@@ -65,7 +73,7 @@ public class PricingEngineService implements CalculateFinalPriceUseCase {
         log.debug("[Producto {}] Variables evaluadas: {}", product.getId(), evaluated);
 
         // 2. Reglas activas, vigentes, del producto y cuya condición se cumple, por prioridad
-        List<PricingRule> applicableRules = ruleRepositoryPort.getRules().stream()
+        List<PricingRule> applicableRules = rules.stream()
                 .filter(rule -> rule.getRuleStatus() == RuleStatus.ACTIVE)
                 .filter(rule -> rule.isInEffectAt(now))
                 .filter(rule -> rule.getProductIds() != null && rule.getProductIds().contains(product.getId().intValue()))

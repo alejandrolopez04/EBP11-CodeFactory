@@ -65,7 +65,7 @@ function isOutOfRange(rule: ApiPricingRule): boolean {
   return now < from || now > to;
 }
 
-export default function PricingRulesScreen() {
+export default function PricingRulesScreen({ onSimulate }: { onSimulate: (ruleId: number) => void }) {
   const [rules, setRules] = useState<ApiPricingRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -230,6 +230,18 @@ export default function PricingRulesScreen() {
                           title="Editar"
                         >
                           <EditIcon />
+                        </RestrictedButton>
+
+                        {/* HU13: abre el simulador con esta regla cargada */}
+                        <RestrictedButton
+                          onClick={() => onSimulate(rule.id)}
+                          className="p-1.5 rounded-[4px] text-[#6b7280] hover:bg-[#fef3c7] hover:text-[#b45309] transition-colors"
+                          title="Simular"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M6 2h4M6.5 2v4L3 12.5A1 1 0 0 0 3.9 14h8.2a1 1 0 0 0 .9-1.5L9.5 6V2" />
+                            <path d="M4.5 10h7" />
+                          </svg>
                         </RestrictedButton>
 
                           <div className="w-px h-5 bg-[#e2e6ed] mx-0.5" />

@@ -3,6 +3,8 @@ import Sidebar from "./components/Sidebar";
 import ProductsScreen from "./components/ProductsScreen";
 import PricingRulesScreen from "./components/PricingRulesScreen";
 import ProductDetailScreen from "./components/ProductDetailScreen";
+import PriceHistoryScreen from "./components/PriceHistoryScreen";
+import PriceSimulationScreen from "./components/PriceSimulationScreen";
 import ProductPriceHistoryScreen from "./components/ProductPriceHistoryScreen";
 import DashboardScreen from "./components/DashboardScreen";
 import BusinessVariablesScreen from "./components/BusinessVariablesScreen";
@@ -10,7 +12,7 @@ import { BusinessVariablesProvider } from "./business-variables/BusinessVariable
 import AppGate from "./business-variables/AppGate";
 import { ProfileProvider } from "./auth/ProfileContext";
 
-export type Screen = "dashboard" | "products" | "rules" | "variables" | "product-detail" | "price-history";
+export type Screen = "dashboard" | "products" | "rules" | "variables" |"simulation" | "product-detail" | "price-history";
 
 export default function App() {
     const [activeScreen, setActiveScreen] = useState<Screen>("dashboard");
@@ -45,6 +47,7 @@ export default function App() {
                         {activeScreen === "products" && <ProductsScreen onViewDetail={(id) => { setSelectedProductId(id); setActiveScreen("product-detail"); }} onViewHistory={openHistory} />}
                         {activeScreen === "rules" && <PricingRulesScreen />}
                         {activeScreen === "variables" && <BusinessVariablesScreen />}
+                        {activeScreen === "simulation" && <PriceSimulationScreen key={simulationRuleId ?? "new"} initialRuleId={simulationRuleId} />}
                         {activeScreen === "product-detail" && <ProductDetailScreen productId={selectedProductId} onBack={() => setActiveScreen("products")} onViewHistory={openHistory} />}
                         {activeScreen === "price-history" && historyProductId !== null && (
                             <ProductPriceHistoryScreen

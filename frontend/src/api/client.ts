@@ -116,6 +116,62 @@ export interface ApiPriceCalculation {
   summary?: string;
 }
 
+export type TriggerType = "MANUAL" | "INICIO" | "PRODUCTO" | "VARIABLES" | "REGLA" | "HORARIO";
+
+export interface ApiPriceChange {
+  traceId: number;
+  previousPrice: number;
+  newPrice: number;
+  triggerType: TriggerType | null;
+  trigger: string | null;
+  /** Lo que disparó el cambio; null = no se aplicó ninguna regla */
+  changeType: "HORARIO" | "DEMANDA" | "DISPONIBILIDAD" | null;
+  appliedRuleIds: number[];
+  clampedToMax: boolean;
+  clampedToMin: boolean;
+  at: string;
+}
+
+export interface ApiPriceHistory {
+  productId: number;
+  productName: string;
+  sku: string;
+  productStatus: "ACTIVE" | "INACTIVE";
+  basePrice: number;
+  currentPrice: number | null;
+  creation: { basePrice: number; at: string | null };
+  totalChanges: number;
+  increases: number;
+  decreases: number;
+  /** Rango consultado ("YYYY-MM-DD", inclusivo); null = sin límite */
+  from: string | null;
+  to: string | null;
+  /** Cambios que hay en el rango; si truncated, solo llegan los más recientes */
+  rangeChanges: number;
+  truncated: boolean;
+  /** Cambios del rango, del más reciente al más antiguo */
+  changes: ApiPriceChange[];
+}
+
+/** HU14: GET /api/products/:id/price-history?from=YYYY-MM-DD&to=YYYY-MM-DD -> cambios de precio del rango. */
+export async function fetchPriceHistory(productId: number, from?: string, to?: string): Promise<ApiPriceHistory> {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const query = params.toString() ? `?${params}` : "";
+  const response = await apiFetch(`${API_URL}/api/products/${productId}/price-history${query}`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message || "No se pudo cargar el historial de precios.");
+  }
+  const data = await response.json();
+  // Si el backend no se reinició tras actualizarlo, la respuesta llega con otro formato
+  if (typeof data?.truncated !== "boolean" || !Array.isArray(data?.changes)) {
+    throw new Error("La respuesta del historial no tiene el formato esperado. Reinicia el backend para cargar la versión actual.");
+  }
+  return data;
+}
+
 /** HU13: condición y efecto de una regla para simular (nueva, o existente con cambios). */
 export interface SimulationRuleDraft {
   variableType: ApiPricingRule["variableType"];

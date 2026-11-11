@@ -3,7 +3,6 @@ import Sidebar from "./components/Sidebar";
 import ProductsScreen from "./components/ProductsScreen";
 import PricingRulesScreen from "./components/PricingRulesScreen";
 import ProductDetailScreen from "./components/ProductDetailScreen";
-import PriceHistoryScreen from "./components/PriceHistoryScreen";
 import PriceSimulationScreen from "./components/PriceSimulationScreen";
 import ProductPriceHistoryScreen from "./components/ProductPriceHistoryScreen";
 import DashboardScreen from "./components/DashboardScreen";
@@ -12,7 +11,7 @@ import { BusinessVariablesProvider } from "./business-variables/BusinessVariable
 import AppGate from "./business-variables/AppGate";
 import { ProfileProvider } from "./auth/ProfileContext";
 
-export type Screen = "dashboard" | "products" | "rules" | "variables" |"simulation" | "product-detail" | "price-history";
+export type Screen = "dashboard" | "products" | "rules" | "variables" | "simulation" | "product-detail" | "price-history";
 
 export default function App() {
     const [activeScreen, setActiveScreen] = useState<Screen>("dashboard");
@@ -20,8 +19,15 @@ export default function App() {
     // HU14: producto cuyo historial se muestra y pantalla a la que vuelve "Volver"
     const [historyProductId, setHistoryProductId] = useState<number | null>(null);
     const [historyReturnTo, setHistoryReturnTo] = useState<Screen>("products");
+    // HU13: regla con la que se abre el simulador desde la pantalla de reglas (null = vacío)
+    const [simulationRuleId, setSimulationRuleId] = useState<number | null>(null);
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+    const navigate = (screen: Screen) => {
+        if (screen === "simulation") setSimulationRuleId(null);
+        setActiveScreen(screen);
+    };
 
     const openHistory = (productId: number) => {
         setHistoryProductId(productId);
@@ -37,7 +43,7 @@ export default function App() {
                     <Sidebar
                         // El historial no tiene pestaña propia: se marca la pantalla desde la que se abrió
                         active={activeScreen === "price-history" ? historyReturnTo : activeScreen}
-                        onNavigate={setActiveScreen}
+                        onNavigate={navigate}
                         isCollapsed={isSidebarCollapsed}
                         toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                     />
@@ -45,7 +51,7 @@ export default function App() {
                     <main className="flex-1 overflow-auto">
                         {activeScreen === "dashboard" && <DashboardScreen onViewHistory={openHistory} />}
                         {activeScreen === "products" && <ProductsScreen onViewDetail={(id) => { setSelectedProductId(id); setActiveScreen("product-detail"); }} onViewHistory={openHistory} />}
-                        {activeScreen === "rules" && <PricingRulesScreen />}
+                        {activeScreen === "rules" && <PricingRulesScreen onSimulate={(ruleId) => { setSimulationRuleId(ruleId); setActiveScreen("simulation"); }} />}
                         {activeScreen === "variables" && <BusinessVariablesScreen />}
                         {activeScreen === "simulation" && <PriceSimulationScreen key={simulationRuleId ?? "new"} initialRuleId={simulationRuleId} />}
                         {activeScreen === "product-detail" && <ProductDetailScreen productId={selectedProductId} onBack={() => setActiveScreen("products")} onViewHistory={openHistory} />}

@@ -9,7 +9,6 @@ const nav = [
   { id: "rules", label: "Reglas de Pricing", icon: RulesIcon },
   { id: "variables", label: "Variables de Negocio", icon: SlidersIcon },
   { id: "simulation", label: "Simulación", icon: FlaskIcon },
-  { id: "history", label: "Historial de Precios", icon: HistoryIcon },
 ] as const;
 
 export default function Sidebar({ 

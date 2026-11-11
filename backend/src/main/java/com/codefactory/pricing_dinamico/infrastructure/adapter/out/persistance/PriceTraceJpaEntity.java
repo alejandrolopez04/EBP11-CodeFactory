@@ -7,7 +7,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "price_calculation_traces")
+@Table(name = "price_calculation_traces",
+        // HU14: el historial de un producto se consulta por producto y fecha
+        indexes = @Index(name = "idx_trace_product_date", columnList = "productId, calculatedAt"))
 public class PriceTraceJpaEntity {
 
     @Id
@@ -61,6 +63,7 @@ public class PriceTraceJpaEntity {
 
     public Long getId() { return id; }
     public Long getProductId() { return productId; }
+    public BigDecimal getBasePrice() { return basePrice; }
     public BigDecimal getPreviousPrice() { return previousPrice; }
     public BigDecimal getFinalPrice() { return finalPrice; }
     public boolean isClampedToMax() { return clampedToMax; }

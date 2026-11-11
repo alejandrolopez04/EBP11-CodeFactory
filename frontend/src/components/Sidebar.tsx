@@ -8,6 +8,7 @@ const nav = [
   { id: "products", label: "Productos", icon: BoxIcon },
   { id: "rules", label: "Reglas de Pricing", icon: RulesIcon },
   { id: "variables", label: "Variables de Negocio", icon: SlidersIcon },
+  { id: "simulation", label: "Simulación", icon: FlaskIcon },
   { id: "history", label: "Historial de Precios", icon: HistoryIcon },
 ] as const;
 
@@ -255,6 +256,15 @@ function SlidersIcon({ size, active }: { size: number; active: boolean }) {
       <circle cx="5" cy="4" r="1.5" fill={active ? "white" : "#9ca3af"} stroke="none" />
       <circle cx="8" cy="8" r="1.5" fill={active ? "white" : "#9ca3af"} stroke="none" />
       <circle cx="11" cy="12" r="1.5" fill={active ? "white" : "#9ca3af"} stroke="none" />
+    </svg>
+  );
+}
+
+function FlaskIcon({ size, active }: { size: number; active: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={active ? "white" : "#9ca3af"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2h4M6.5 2v4L3 12.5A1 1 0 0 0 3.9 14h8.2a1 1 0 0 0 .9-1.5L9.5 6V2" />
+      <path d="M4.5 10h7" />
     </svg>
   );
 }

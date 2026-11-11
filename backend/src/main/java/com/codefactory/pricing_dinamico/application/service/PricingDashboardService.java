@@ -49,7 +49,7 @@ public class PricingDashboardService implements GetPricingDashboardUseCase {
                 .orElse(null);
 
         List<RecentUpdate> recent = priceTraceRepositoryPort.findRecentChanges(10).stream()
-                .map(u -> new RecentUpdate(u.traceId(),
+                .map(u -> new RecentUpdate(u.traceId(), u.productId(),
                         names.getOrDefault(u.productId(), "Producto " + u.productId()),
                         u.previousPrice(), u.finalPrice(), u.triggerType(), u.triggerDetail(),
                         u.clampedToMax(), u.clampedToMin(), u.calculatedAt()))

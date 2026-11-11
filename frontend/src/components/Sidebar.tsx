@@ -8,7 +8,6 @@ const nav = [
   { id: "products", label: "Productos", icon: BoxIcon },
   { id: "rules", label: "Reglas de Pricing", icon: RulesIcon },
   { id: "variables", label: "Variables de Negocio", icon: SlidersIcon },
-  { id: "history", label: "Historial de Precios", icon: HistoryIcon },
 ] as const;
 
 export default function Sidebar({ 
@@ -259,12 +258,3 @@ function SlidersIcon({ size, active }: { size: number; active: boolean }) {
   );
 }
 
-function HistoryIcon({ size, active }: { size: number; active: boolean }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke={active ? "white" : "#9ca3af"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 8a6 6 0 1 0 1.5-3.9" />
-      <path d="M2 3v3.5L5.5 8" />
-      <path d="M8 5v3l2 1.5" />
-    </svg>
-  );
-}

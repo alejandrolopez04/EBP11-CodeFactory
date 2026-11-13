@@ -1,5 +1,7 @@
 package com.codefactory.pricing_dinamico.infrastructure.adapter.in.rest;
 
+import com.codefactory.pricing_dinamico.domain.model.entities.AccountLockedException;
+import com.codefactory.pricing_dinamico.domain.model.entities.InvalidCredentialsException;
 import com.codefactory.pricing_dinamico.domain.model.entities.OperationNotAllowedException;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductNotFoundException;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProfileRequiredException;
@@ -10,10 +12,17 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private final Clock clock;
+
+    public GlobalExceptionHandler(Clock clock) {
+        this.clock = clock;
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
@@ -39,6 +48,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OperationNotAllowedException.class)
     public ResponseEntity<Map<String, String>> handleNotAllowed(OperationNotAllowedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<Map<String, String>> handleAccountLocked(AccountLockedException ex) {
+        long retryAfter = Math.max(1, Duration.between(clock.instant(), ex.getLockedUntil()).toSeconds());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfter))
+                .body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(ProfileRequiredException.class)

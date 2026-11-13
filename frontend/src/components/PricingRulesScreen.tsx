@@ -8,7 +8,7 @@ import {
   type ApiPricingRule,
 } from "../api/client";
 import RestrictedButton from "../auth/RestrictedButton";
-import { useProfile } from "../auth/ProfileContext";
+import { useAuth } from "../auth/AuthContext";
 import LoadingScreen from "./LoadingScreen";
 
 const VARIABLE_LABELS: Record<string, string> = {
@@ -74,7 +74,7 @@ export default function PricingRulesScreen({ onSimulate }: { onSimulate: (ruleId
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const { canModify } = useProfile();
+  const { canModify } = useAuth();
   const [togglingStatusId, setTogglingStatusId] = useState<number | null>(null);
 
   const loadRules = async () => {

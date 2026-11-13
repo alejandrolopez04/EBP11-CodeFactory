@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { useBusinessVariables } from "./BusinessVariablesContext";
 import SetupWizardModal from "./SetupWizardModal";
-import { useProfile } from "../auth/ProfileContext";
+import { useAuth } from "../auth/AuthContext";
 import LoadingScreen from "../components/LoadingScreen";
 
 export default function AppGate({ children }: { children: ReactNode }) {
   const { variables, status, isLoaded } = useBusinessVariables();
-  const { canModify } = useProfile();
+  const { canModify } = useAuth();
 
   if (!isLoaded) {
     return <LoadingScreen label="Cargando variables…" />;
@@ -20,7 +20,7 @@ export default function AppGate({ children }: { children: ReactNode }) {
           <SetupWizardModal />
         ) : (
           <div className="fixed bottom-4 right-4 bg-white border border-[#e2e6ed] rounded-[6px] px-4 py-3 text-[12px] text-[#374151] shadow">
-            Las variables de negocio aún no están configuradas. Cambia al perfil Administrador para configurarlas.
+            Las variables de negocio aún no están configuradas. Un administrador debe configurarlas.
           </div>
         ))}
     </>

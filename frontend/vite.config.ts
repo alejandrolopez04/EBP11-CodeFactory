@@ -34,6 +34,10 @@ export default defineConfig(({ mode }) => {
       port: parseInt(process.env.PORT || '5173'),
       strictPort: true,
       watch: { ignored: ['**/.figma/**'] },
+      // /api va al backend desde el mismo origen, así la cookie de sesión es de primera parte.
+      proxy: {
+        '/api': { target: process.env.DEV_API_TARGET || 'http://localhost:8080', changeOrigin: true },
+      },
     },
     preview: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',

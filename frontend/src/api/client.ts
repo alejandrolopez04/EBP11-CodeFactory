@@ -1,4 +1,5 @@
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+export { API_URL } from "./config";
+import { API_URL } from "./config";
 import { apiFetch } from "./http";
 
 const PRICING_RULES_URL = `${API_URL}/api/pricing_rules`;

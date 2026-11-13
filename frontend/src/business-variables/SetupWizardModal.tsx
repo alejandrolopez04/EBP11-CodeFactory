@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useBusinessVariables } from "./BusinessVariablesContext";
+import { useAuth } from "../auth/AuthContext";
 import DemandForm from "./forms/DemandForm";
 import AvailabilityForm from "./forms/AvailabilityForm";
 import ScheduleForm from "./forms/ScheduleForm";
@@ -21,6 +22,7 @@ import {
 
 export default function SetupWizardModal() {
   const { save } = useBusinessVariables();
+  const { logout } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
@@ -202,6 +204,15 @@ export default function SetupWizardModal() {
           )}
 
           <div className="flex justify-end gap-2 mt-5 pt-3 border-t border-[#f1f3f7]">
+            {/* El asistente es obligatorio, pero no debe dejar al usuario sin poder cerrar sesión */}
+            <button
+                type="button"
+                onClick={() => void logout()}
+                disabled={isSaving}
+                className="mr-auto px-1 py-1.5 text-[12px] font-medium text-[#6b7280] hover:text-[#dc2626] transition-colors"
+            >
+              Cerrar sesión
+            </button>
             {step > 1 && (
                 <button
                     type="button"

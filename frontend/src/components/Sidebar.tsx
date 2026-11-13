@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Screen } from "../App";
-import { useProfile } from "../auth/ProfileContext";
-import { ROLE_LABELS } from "../api/profile";
+import { useAuth } from "../auth/AuthContext";
+import { ROLE_LABELS } from "../api/auth";
 
 const nav = [
   { id: "dashboard", label: "Dashboard", icon: GridIcon },
@@ -23,7 +23,8 @@ export default function Sidebar({
   toggleSidebar: () => void; 
 }) {
 
-    const { profiles, current, switchProfile } = useProfile();
+    const { current, logout } = useAuth();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const initials = current
         ? current.fullName.split(" ").map((w) => w[0]).slice(0, 2).join("")
         : "?";
@@ -112,111 +113,91 @@ export default function Sidebar({
         })}
       </nav>
 
-        {/* FOOTER (Perfil activo + switch) */}
+        {/* FOOTER (usuario con sesión + cerrar sesión) */}
         <div className={`border-t border-[#e2e6ed] ${isCollapsed ? 'flex justify-center py-4' : 'p-3'}`}>
-          {isCollapsed ? (
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf1ff] text-[#1a56db]"
-              title={current ? `${current.fullName} · ${ROLE_LABELS[current.role]}` : "Sin perfil"}
-            >
-              <span className="text-[11px] font-semibold font-display">{initials}</span>
-            </div>
-          ) : (
-            <div className="relative" ref={profileMenuRef}>
-              {isProfileMenuOpen && (
-                <div
-                  id="profile-menu"
-                  role="group"
-                  aria-label="Perfiles disponibles"
-                  className="absolute bottom-full left-0 z-30 mb-2 w-full overflow-hidden rounded-xl border border-[#e2e6ed] bg-white p-1.5 shadow-[0_12px_32px_-12px_rgba(15,23,42,0.28)]"
-                >
-                  <div className="px-2.5 pb-1.5 pt-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#9ca3af]">
-                    Cambiar perfil
-                  </div>
-                  {profiles.length === 0 ? (
-                    <div className="px-2.5 py-2 text-[11px] text-[#6b7280]">No hay perfiles disponibles</div>
-                  ) : profiles.map((profile) => {
-                    const isCurrent = profile.id === current?.id;
-                    const profileInitials = profile.fullName
-                      .split(" ")
-                      .map((word) => word[0])
-                      .slice(0, 2)
-                      .join("");
-
-                    return (
-                      <button
-                        key={profile.id}
-                        type="button"
-                        aria-pressed={isCurrent}
-                        onClick={() => {
-                          switchProfile(profile.id);
-                          setIsProfileMenuOpen(false);
-                          profileTriggerRef.current?.focus();
-                        }}
-                        className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors ${
-                          isCurrent ? "bg-[#f1f5ff]" : "hover:bg-[#f8fafc]"
-                        }`}
-                      >
-                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
-                          isCurrent ? "bg-[#dbeafe] text-[#1a56db]" : "bg-[#f1f3f7] text-[#6b7280]"
-                        }`}>
-                          {profileInitials}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className={`block truncate text-[11px] font-medium ${isCurrent ? "text-[#1a56db]" : "text-[#374151]"}`}>
-                            {profile.fullName}
-                          </span>
-                          <span className="mt-0.5 block text-[10px] text-[#9ca3af]">
-                            {ROLE_LABELS[profile.role]}
-                          </span>
-                        </span>
-                        {isCurrent && (
-                          <svg aria-hidden="true" className="h-4 w-4 shrink-0 text-[#1a56db]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m3.5 8.5 3 3 6-7" />
-                          </svg>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              <button
-                ref={profileTriggerRef}
-                type="button"
-                aria-label={`Perfil actual: ${current?.fullName ?? "Sin perfil"}. Cambiar perfil`}
-                aria-expanded={isProfileMenuOpen}
-                aria-controls="profile-menu"
-                onClick={() => setIsProfileMenuOpen((open) => !open)}
-                className="group flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-[#f5f7fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a56db]/30"
+          <div className={`relative ${isCollapsed ? '' : 'w-full'}`} ref={profileMenuRef}>
+            {isProfileMenuOpen && (
+              <div
+                id="profile-menu"
+                role="menu"
+                aria-label="Cuenta"
+                className={`absolute z-30 overflow-hidden rounded-xl border border-[#e2e6ed] bg-white p-1.5 shadow-[0_12px_32px_-12px_rgba(15,23,42,0.28)] ${
+                  isCollapsed ? 'bottom-0 left-full ml-3 w-56' : 'bottom-full left-0 mb-2 w-full'
+                }`}
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf1ff] text-[11px] font-semibold text-[#1a56db] ring-1 ring-inset ring-[#1a56db]/10">
-                  {initials}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[11px] font-semibold text-[#0f1117]">
-                    {current?.fullName ?? "Sin perfil"}
-                  </span>
-                  <span className="mt-0.5 block truncate text-[10px] text-[#6b7280]">
-                    {current ? ROLE_LABELS[current.role] : "Seleccionar perfil"}
-                  </span>
-                </span>
-                <svg
-                  aria-hidden="true"
-                  className={`h-4 w-4 shrink-0 text-[#9ca3af] transition-transform group-hover:text-[#6b7280] ${isProfileMenuOpen ? "rotate-180" : ""}`}
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                <div className="px-2.5 pb-2 pt-2">
+                  <div className="truncate text-[11px] font-semibold text-[#0f1117]">{current?.fullName}</div>
+                  <div className="mt-0.5 truncate text-[10px] text-[#6b7280]">{current?.email}</div>
+                  {current && (
+                    <span className="mt-1.5 inline-block rounded-full bg-[#eef3fd] px-2 py-0.5 text-[10px] font-medium text-[#1a56db]">
+                      {ROLE_LABELS[current.role]}
+                    </span>
+                  )}
+                </div>
+                <div className="my-1 border-t border-[#f1f3f7]" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={isLoggingOut}
+                  onClick={async () => {
+                    setIsLoggingOut(true);
+                    await logout();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12px] font-medium text-[#374151] transition-colors hover:bg-[#fef2f2] hover:text-[#dc2626] disabled:opacity-60"
                 >
-                  <path d="m4 6 4 4 4-4" />
-                </svg>
-              </button>
-            </div>
-          )}
+                  <LogoutIcon />
+                  {isLoggingOut ? "Cerrando sesión…" : "Cerrar sesión"}
+                </button>
+              </div>
+            )}
+            <button
+              ref={profileTriggerRef}
+              type="button"
+              aria-label={`Cuenta de ${current?.fullName ?? "usuario"}`}
+              aria-haspopup="menu"
+              aria-expanded={isProfileMenuOpen}
+              aria-controls="profile-menu"
+              title={isCollapsed && current ? `${current.fullName} · ${ROLE_LABELS[current.role]}` : undefined}
+              onClick={() => setIsProfileMenuOpen((open) => !open)}
+              className={isCollapsed
+                ? "flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf1ff] text-[#1a56db] transition-shadow hover:ring-2 hover:ring-[#1a56db]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a56db]/30"
+                : "group flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-[#f5f7fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a56db]/30"}
+            >
+              {isCollapsed ? (
+                <span className="text-[11px] font-semibold font-display">{initials}</span>
+              ) : (
+                <>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf1ff] text-[11px] font-semibold text-[#1a56db] ring-1 ring-inset ring-[#1a56db]/10">
+                    {initials}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[11px] font-semibold text-[#0f1117]">{current?.fullName}</span>
+                    <span className="mt-0.5 block truncate text-[10px] text-[#6b7280]">
+                      {current ? ROLE_LABELS[current.role] : ""}
+                    </span>
+                  </span>
+                  <svg
+                    aria-hidden="true"
+                    className={`h-4 w-4 shrink-0 text-[#9ca3af] transition-transform group-hover:text-[#6b7280] ${isProfileMenuOpen ? "rotate-180" : ""}`}
+                    viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    <path d="m4 10 4-4 4 4" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
         </div>
     </aside>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2.5H3.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1H6" />
+      <path d="M10.5 11 13.5 8l-3-3M13.5 8H6" />
+    </svg>
   );
 }
 

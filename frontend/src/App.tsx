@@ -9,11 +9,23 @@ import DashboardScreen from "./components/DashboardScreen";
 import BusinessVariablesScreen from "./components/BusinessVariablesScreen";
 import { BusinessVariablesProvider } from "./business-variables/BusinessVariablesContext";
 import AppGate from "./business-variables/AppGate";
-import { ProfileProvider } from "./auth/ProfileContext";
+import { AuthProvider } from "./auth/AuthContext";
+import AuthGate from "./auth/AuthGate";
 
 export type Screen = "dashboard" | "products" | "rules" | "variables" | "simulation" | "product-detail" | "price-history";
 
 export default function App() {
+    return (
+        <AuthProvider>
+            <AuthGate>
+                <Workspace />
+            </AuthGate>
+        </AuthProvider>
+    );
+}
+
+/** La aplicación con sesión iniciada. Se desmonta al cerrar sesión, así su estado no pasa al siguiente usuario. */
+function Workspace() {
     const [activeScreen, setActiveScreen] = useState<Screen>("dashboard");
     const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
     // HU14: producto cuyo historial se muestra y pantalla a la que vuelve "Volver"
@@ -36,7 +48,6 @@ export default function App() {
     };
 
     return (
-        <ProfileProvider>
             <BusinessVariablesProvider>
             <AppGate>
                 <div className="flex h-full bg-[#f4f5f7]">
@@ -66,6 +77,5 @@ export default function App() {
                 </div>
             </AppGate>
         </BusinessVariablesProvider>
-        </ProfileProvider>
     );
 }

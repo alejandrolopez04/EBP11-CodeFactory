@@ -27,7 +27,7 @@ import {
   type ApiPricingRule,
 } from "../api/client";
 import { apiFetch } from "../api/http";
-import { useProfile } from "../auth/ProfileContext";
+import { useAuth } from "../auth/AuthContext";
 import RestrictedButton from "../auth/RestrictedButton";
 
 /* ------------------------------------------------------------------ */
@@ -192,7 +192,7 @@ export default function ProductDetailScreen({
   onBack: () => void;
   onViewHistory: (productId: number) => void;
 }) {
-  const { canModify } = useProfile();
+  const { canModify } = useAuth();
   const [product, setProduct] = useState<ApiProduct | null>(null);
   const [rules, setRules] = useState<ApiPricingRule[]>([]);
   const [calc, setCalc] = useState<ApiPriceCalculation | null>(null);

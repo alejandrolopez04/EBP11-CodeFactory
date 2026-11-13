@@ -1,10 +1,10 @@
 import type { ButtonHTMLAttributes } from "react";
-import { useProfile } from "./ProfileContext";
+import { useAuth } from "./AuthContext";
 
 export default function RestrictedButton({
                                              disabled, title, className = "", ...props
                                          }: ButtonHTMLAttributes<HTMLButtonElement>) {
-    const { canModify } = useProfile();
+    const { canModify } = useAuth();
     const blocked = !canModify;
 
     return (

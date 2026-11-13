@@ -17,6 +17,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(roleAuthorizationInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/profiles"); // temporal hasta la HU de login
+                // Públicos: login no tiene token aún; refresh y logout se autentican con la cookie.
+                .excludePathPatterns("/api/auth/login", "/api/auth/refresh", "/api/auth/logout");
     }
 }

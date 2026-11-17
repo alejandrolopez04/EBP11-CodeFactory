@@ -43,6 +43,35 @@ export type NumericFieldErrors = Record<string, string>;
 
 export type ScheduleFieldErrors = Record<string, string>;
 
+export type AutoUpdateVariableType = "DEMANDA" | "DISPONIBILIDAD" | "TEMPORAL";
+
+export type AutoUpdateConfig = {
+  id?: number;
+  variableType: AutoUpdateVariableType;
+  sourceName: string;
+  sourceUrl: string;
+  valueField: string;
+  frequencyMinutes: number;
+  lastRunAt?: string | null;
+  active: boolean;
+};
+
+export type AutoUpdateResult =
+  | "SUCCESS"
+  | "SOURCE_UNAVAILABLE"
+  | "VALUE_OUT_OF_RANGE";
+
+export type AutoUpdateHistory = {
+  id: number;
+  variableType: string;
+  sourceName: string;
+  previousValue: number | null;
+  newValue: number | null;
+  result: AutoUpdateResult;
+  message: string;
+  executedAt: string;
+};
+
 export const MONTHS = [
   "Enero",
   "Febrero",

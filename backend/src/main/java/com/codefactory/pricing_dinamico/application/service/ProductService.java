@@ -5,8 +5,12 @@ import com.codefactory.pricing_dinamico.application.port.in.CreateProductUseCase
 import com.codefactory.pricing_dinamico.application.port.in.DeleteProductUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.GetAllProductsUseCase;
 import com.codefactory.pricing_dinamico.application.port.in.UpdateProductUseCase;
+import com.codefactory.pricing_dinamico.application.port.out.PriceChangeRepositoryPort;
 import com.codefactory.pricing_dinamico.application.port.out.ProductRepositoryPort;
 import com.codefactory.pricing_dinamico.application.port.out.RuleRepositoryPort;
+import com.codefactory.pricing_dinamico.domain.model.entities.ChangeCause;
+import com.codefactory.pricing_dinamico.domain.model.entities.PriceChangeRecord;
+import com.codefactory.pricing_dinamico.domain.model.entities.PricingRule;
 import com.codefactory.pricing_dinamico.domain.model.entities.Product;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductNotFoundException;
 import com.codefactory.pricing_dinamico.domain.model.entities.ProductStatus;
@@ -24,13 +28,16 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
     private final ProductRepositoryPort productRepositoryPort;
     private final RuleRepositoryPort ruleRepositoryPort;
     private final ApplicationEventPublisher events;
+    private final PriceChangeRepositoryPort priceChangeRepositoryPort;
 
     public ProductService(ProductRepositoryPort productRepositoryPort,
                            RuleRepositoryPort ruleRepositoryPort,
-                           ApplicationEventPublisher events) {
+                           ApplicationEventPublisher events,
+                           PriceChangeRepositoryPort priceChangeRepositoryPort) {
         this.productRepositoryPort = productRepositoryPort;
         this.ruleRepositoryPort = ruleRepositoryPort;
         this.events = events;
+        this.priceChangeRepositoryPort = priceChangeRepositoryPort;
     }
 
     @Override
@@ -45,7 +52,9 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
         return saved;
     }
 
+
     @Override
+    @Transactional
     public Product updateProduct(Long id, Product changes) {
         Product existing = productRepositoryPort.getProductById(id)
                 .orElseThrow(() -> new ProductNotFoundException(id));
@@ -61,6 +70,13 @@ public class ProductService implements CreateProductUseCase, GetAllProductsUseCa
                 changes.getMaxPrice(), changes.getMinPrice(), changes.getCategory(), existing.getCurrentPrice(), existing.getPriceUpdatedAt(), changes.getProductDemand(), changes.getProductAvailability());
 
         Product saved = productRepositoryPort.save(updated);
+
+        // Reporte de impacto: edición manual del precio base
+        if (existing.getBasePrice() != null && changes.getBasePrice().compareTo(existing.getBasePrice()) != 0) {
+            priceChangeRepositoryPort.save(new PriceChangeRecord(null, id, existing.getBasePrice(),
+                    changes.getBasePrice(), PricingRule.currentBusinessTime(), ChangeCause.EDICION_MANUAL,
+                    null, null, null, "Administrador", "Edición manual"));
+        }
         events.publishEvent(PricingInputsChangedEvent.forProduct(id, "Producto actualizado"));
         return saved;
     }

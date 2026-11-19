@@ -8,7 +8,9 @@ import com.codefactory.pricing_dinamico.application.port.out.RuleRepositoryPort;
 import com.codefactory.pricing_dinamico.domain.model.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -28,6 +30,10 @@ public class PricingEngineService implements CalculateFinalPriceUseCase {
     private final RuleRepositoryPort ruleRepositoryPort;
     private final BusinessVariableRepositoryPort businessVariableRepositoryPort;
     private final PriceTraceRepositoryPort priceTraceRepositoryPort;
+
+    // Reporte de impacto. Inyección por campo para no cambiar el constructor que usan los tests de otras HU.
+    @Autowired
+    private PriceChangeRecorder priceChangeRecorder;
 
     public PricingEngineService(ProductRepositoryPort productRepositoryPort,
                                 RuleRepositoryPort ruleRepositoryPort,
@@ -124,6 +130,7 @@ public class PricingEngineService implements CalculateFinalPriceUseCase {
                 clampedToMax, clampedToMin, steps, evaluated, summary, now);
     }
 
+    @Transactional   // el precio nuevo y su registro de cambio se confirman juntos
     public PriceCalculationResult recalculate(Long productId, TriggerType type, String detail) {
         Product product = productRepositoryPort.getProductById(productId).orElse(null);
         if (product == null) return null;
@@ -135,6 +142,7 @@ public class PricingEngineService implements CalculateFinalPriceUseCase {
 
         productRepositoryPort.updateCurrentPrice(productId, result.getFinalPrice(), result.getCalculatedAt());
         result.setTraceId(priceTraceRepositoryPort.save(result));
+        priceChangeRecorder.record(result);   // reporte de impacto (solo si el precio cambió)
 
         log.info("[Producto {}] {} ({}): {} → {}. {} Traza #{}", productId, detail, type,
                 product.getCurrentPrice(), result.getFinalPrice(), result.getSummary(), result.getTraceId());

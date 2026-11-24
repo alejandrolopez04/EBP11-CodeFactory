@@ -11,7 +11,7 @@ import { BusinessVariablesProvider } from "./business-variables/BusinessVariable
 import AppGate from "./business-variables/AppGate";
 import { AuthProvider } from "./auth/AuthContext";
 import AuthGate from "./auth/AuthGate";
-import ImpactReportScreen from "./components/ImpactReportScreen";
+import PriceComparisonScreen from "./components/PriceComparisonScreen";
 
 export type Screen = "dashboard" | "products" | "rules" | "variables" | "simulation" | "impact" | "product-detail" | "price-history";
 
@@ -65,7 +65,7 @@ function Workspace() {
                         {activeScreen === "products" && <ProductsScreen onViewDetail={(id) => { setSelectedProductId(id); setActiveScreen("product-detail"); }} onViewHistory={openHistory} />}
                         {activeScreen === "rules" && <PricingRulesScreen onSimulate={(ruleId) => { setSimulationRuleId(ruleId); setActiveScreen("simulation"); }} />}
                         {activeScreen === "variables" && <BusinessVariablesScreen />}
-                        {activeScreen === "impact" && <ImpactReportScreen />}
+                        {activeScreen === "impact" && <PriceComparisonScreen />}
                         {activeScreen === "simulation" && <PriceSimulationScreen key={simulationRuleId ?? "new"} initialRuleId={simulationRuleId} />}
                         {activeScreen === "product-detail" && <ProductDetailScreen productId={selectedProductId} onBack={() => setActiveScreen("products")} onViewHistory={openHistory} />}
                         {activeScreen === "price-history" && historyProductId !== null && (

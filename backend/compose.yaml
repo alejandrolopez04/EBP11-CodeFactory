@@ -22,6 +22,9 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      ANALISTA_PASSWORD: ${ANALISTA_PASSWORD:?ANALISTA_PASSWORD is required}
     depends_on:
       - postgres
 volumes:

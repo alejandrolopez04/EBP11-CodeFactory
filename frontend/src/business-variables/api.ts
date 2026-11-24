@@ -1,17 +1,18 @@
 import type { BusinessVariables } from "./types";
+import type {
+  AutoUpdateConfig,
+  AutoUpdateHistory,
+  AutoUpdateVariableType,
+} from "./types";
 import { API_URL } from "../api/client";
 import { apiFetch } from "../api/http";
 
 const VARIABLES_URL = `${API_URL}/api/variables`;
+const AUTO_UPDATE_URL = `${API_URL}/api/variables/auto-update`;
 
 export type Section = "demand" | "availability" | "schedule";
 export const ALL_SECTIONS: Section[] = ["demand", "availability", "schedule"];
 
-// ---------------------------------------------------------------------------
-// DTOs: espejo del JSON que produce/consume BusinessVariableController.
-// `variableType` es obligatorio al enviar: el backend lo usa para elegir la
-// subclase (JsonTypeInfo.As.EXISTING_PROPERTY).
-// ---------------------------------------------------------------------------
 type BaseDto = { id?: number; updatedAt?: string };
 
 export type DemandDto = BaseDto & {
@@ -28,7 +29,7 @@ export type AvailabilityDto = BaseDto & {
 
 export type TemporalDto = BaseDto & {
   variableType: "TEMPORAL";
-  morningStartTime: string; // LocalTime: llega como "08:00:00" (o "08:00")
+  morningStartTime: string;
   morningEndTime: string;
   afternoonStartTime: string;
   afternoonEndTime: string;
@@ -37,9 +38,6 @@ export type TemporalDto = BaseDto & {
 
 export type BackendVariable = DemandDto | AvailabilityDto | TemporalDto;
 
-// ---------------------------------------------------------------------------
-// HTTP
-// ---------------------------------------------------------------------------
 export async function fetchRaw(signal?: AbortSignal): Promise<BackendVariable[]> {
   const res = await apiFetch(VARIABLES_URL, { signal });
   if (!res.ok) throw new Error(`Error ${res.status} al cargar variables`);
@@ -56,11 +54,7 @@ export async function postRaw(items: BackendVariable[]): Promise<BackendVariable
   return res.json();
 }
 
-// ---------------------------------------------------------------------------
-// Backend -> UI. Devuelve null si falta alguna de las 3 variables
-// (todavía no configurado: la pantalla debe mostrar el wizard).
-// ---------------------------------------------------------------------------
-const hhmm = (time: string) => time.slice(0, 5); // "08:00:00" -> "08:00"
+const hhmm = (time: string) => time.slice(0, 5);
 
 export function toBusinessVariables(list: BackendVariable[]): BusinessVariables | null {
   const d = list.find((v): v is DemandDto => v.variableType === "DEMANDA");
@@ -88,10 +82,6 @@ export function toBusinessVariables(list: BackendVariable[]): BusinessVariables 
   };
 }
 
-// ---------------------------------------------------------------------------
-// UI -> Backend, una sección. Reutiliza el `id` existente (si lo hay) para que
-// el backend haga UPDATE y no INSERT de una fila nueva.
-// ---------------------------------------------------------------------------
 export function toBackendItem(
   section: Section,
   values: BusinessVariables,
@@ -116,4 +106,56 @@ export function toBackendItem(
       };
     }
   }
+}
+
+export async function fetchAutoUpdateConfigs(): Promise<AutoUpdateConfig[]> {
+  const res = await apiFetch(AUTO_UPDATE_URL);
+
+  if (!res.ok) {
+    throw new Error(`Error ${res.status} al cargar configuraciones`);
+  }
+
+  return res.json();
+}
+
+export async function saveAutoUpdateConfig(
+  config: AutoUpdateConfig,
+): Promise<AutoUpdateConfig> {
+  const res = await apiFetch(AUTO_UPDATE_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Error ${res.status} al guardar la configuración`);
+  }
+
+  return res.json();
+}
+
+export async function runAutoUpdate(
+  variableType: AutoUpdateVariableType,
+): Promise<AutoUpdateHistory> {
+  const res = await apiFetch(`${AUTO_UPDATE_URL}/${variableType}/run`, {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Error ${res.status} al actualizar la variable`);
+  }
+
+  return res.json();
+}
+
+export async function fetchAutoUpdateHistory(
+  variableType: AutoUpdateVariableType,
+): Promise<AutoUpdateHistory[]> {
+  const res = await apiFetch(`${AUTO_UPDATE_URL}/${variableType}/history`);
+
+  if (!res.ok) {
+    throw new Error(`Error ${res.status} al cargar el historial`);
+  }
+
+  return res.json();
 }

@@ -92,9 +92,6 @@ export default function PriceComparisonScreen() {
     <div className="min-h-full bg-[#f7f8fa] px-7 py-6 lg:px-8">
       <header className="mb-5 flex items-center justify-between">
         <h1 className="font-display text-[22px] font-bold text-[#172033]">Precios actuales vs. históricos</h1>
-        <button className="flex items-center gap-2 rounded-[6px] border border-[#dce1e8] bg-white px-3 py-2 text-[12px] text-[#374151] shadow-sm">
-          <GlobeIcon /> Español <ChevronIcon />
-        </button>
       </header>
 
       <section className="rounded-[10px] border border-[#e1e5eb] bg-white px-4 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.02)] sm:px-5">
@@ -198,6 +195,4 @@ function ComparisonTable({ products }: { products: ProductComparison[] }) {
   </div>;
 }
 
-function GlobeIcon() { return <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.4 2.5 3.5 5.5 3.5 9s-1.1 6.5-3.5 9c-2.4-2.5-3.5-5.5-3.5-9S9.6 5.5 12 3Z" /></svg>; }
-function ChevronIcon() { return <svg aria-hidden="true" width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m4 6 4 4 4-4" /></svg>; }
 function PencilIcon() { return <svg aria-hidden="true" width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m10.9 2.1 3 3-8.6 8.6-3.3.4.4-3.3 8.5-8.7Z" /><path d="m9.2 3.8 3 3" /></svg>; }
